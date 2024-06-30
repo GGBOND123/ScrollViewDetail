@@ -76,24 +76,25 @@ namespace SuperScrollView
         public float SetItemSize(int index, float size)
         {
             if(index > mMaxNoZeroIndex && size > 0)
-            {
                 mMaxNoZeroIndex = index;
-            }
+            
             float old = mItemSizeArray[index];
             if (old == size)
-            {
                 return 0;
-            }
+            
             mItemSizeArray[index] = size;
             if (index < mDirtyBeginIndex)
-            {
                 mDirtyBeginIndex = index;
-            }
+            
             float ds = size - old;
             mGroupSize = mGroupSize + ds;
             return ds;
         }
 
+        /// <summary>
+        /// 设置当前Group的数量
+        /// </summary>
+        /// <param name="count"></param>
         public void SetItemCount(int count)
         {
             if(count < mMaxNoZeroIndex)
@@ -254,7 +255,7 @@ namespace SuperScrollView
 
 
             count = mItemSizeGroupList.Count;
-            if((count-1) < mMaxNotEmptyGroupIndex)
+            if ((count - 1) < mMaxNotEmptyGroupIndex)
                 mMaxNotEmptyGroupIndex = count - 1;
             if(mMaxNotEmptyGroupIndex < 0)
                 mMaxNotEmptyGroupIndex = 0;
@@ -286,9 +287,7 @@ namespace SuperScrollView
             }
             mTotalSize += changedSize;
             if(groupIndex > mMaxNotEmptyGroupIndex && size > 0)
-            {
                 mMaxNotEmptyGroupIndex = groupIndex;
-            }
         }
 
         public float GetItemPos(int itemIndex)

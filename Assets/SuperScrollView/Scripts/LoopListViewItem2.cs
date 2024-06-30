@@ -135,6 +135,10 @@ namespace SuperScrollView
                 mItemIndex = value;
             }
         }
+
+        /// <summary>
+        /// 第几次从池子中GetItem()，从第一次开始累加计数的。
+        /// </summary>
         public int ItemId
         {
             get

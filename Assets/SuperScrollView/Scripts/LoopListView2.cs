@@ -22,7 +22,10 @@ namespace SuperScrollView
         /// </summary>
         List<LoopListViewItem2> mTmpPooledItemList = new List<LoopListViewItem2>();
         List<LoopListViewItem2> mPooledItemList = new List<LoopListViewItem2>();
-        static int mCurItemIdCount = 0;
+        /// <summary>
+        /// NewListViewItem()时，从池子中GetItem()的累加次数。
+        /// </summary>
+        static int  mCurItemIdCount = 0;
         /// <summary>
         /// 滚轮的congtent
         /// </summary>
@@ -214,15 +217,27 @@ namespace SuperScrollView
         private ListItemArrangeType mArrangeType = ListItemArrangeType.TopToBottom;
         public ListItemArrangeType ArrangeType { get { return mArrangeType; } set { mArrangeType = value; } }
 
+        /// <summary>
+        /// 装所有 LoopListViewItem2 的List
+        /// </summary>
         List<LoopListViewItem2> mItemList = new List<LoopListViewItem2>();
         /// <summary>
         /// 滚轮的content Trans
         /// </summary>
         RectTransform mContainerTrans;
         ScrollRect mScrollRect = null;
+        /// <summary>
+        /// 滚轮的Trans
+        /// </summary>
         RectTransform mScrollRectTransform = null;
+        /// <summary>
+        /// 滚轮的viewport Trans
+        /// </summary>
         RectTransform mViewPortRectTransform = null;
         float mItemDefaultWithPaddingSize = 20;
+        /// <summary>
+        /// SetListItemCount中设置需要显示的Item的总数
+        /// </summary>
         int mItemTotalCount = 0;
         bool mIsVertList = false;
         Func<LoopListView2, int, LoopListViewItem2> mOnGetItemByIndex;
