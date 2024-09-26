@@ -95,7 +95,7 @@ namespace SuperScrollView
         public void RequestLoadMoreDataList(int loadCount,System.Action onLoadMoreFinished)
         {
             mLoadMoreCount = loadCount;
-            mDataLoadLeftTime = 1;
+            mDataLoadLeftTime = 10;
             mOnLoadMoreFinished = onLoadMoreFinished;
             mIsWaitLoadingMoreData = true;
         }
