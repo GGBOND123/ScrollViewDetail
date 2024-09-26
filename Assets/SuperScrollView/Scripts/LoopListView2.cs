@@ -1365,7 +1365,12 @@ namespace SuperScrollView
             return mItemPosMgr.GetItemPos(itemIndex);
         }
 
-      
+        /// <summary>
+        /// 计算该Item在ViewPort内的局部坐标位置
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="corner"></param>
+        /// <returns></returns>
         public Vector3 GetItemCornerPosInViewPort(LoopListViewItem2 item, ItemCornerEnum corner = ItemCornerEnum.LeftBottom)
         {
             item.CachedRectTransform.GetWorldCorners(mItemWorldCorners);
