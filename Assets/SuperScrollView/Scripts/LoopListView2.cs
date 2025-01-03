@@ -170,11 +170,19 @@ namespace SuperScrollView
 
     public class LoopListViewInitParam
     {
-        // all the default values
+        /// <summary>
+        /// 当项从视口中滚动超出此距离时会被回收。
+        /// </summary>
         public float mDistanceForRecycle0 = 300; //mDistanceForRecycle0 should be larger than mDistanceForNew0
+        /// <summary>
+        /// 当视口内需要显示新的项时，达到此距离会触发加载。
+        /// </summary>
         public float mDistanceForNew0 = 200;
         public float mDistanceForRecycle1 = 300;//mDistanceForRecycle1 should be larger than mDistanceForNew1
         public float mDistanceForNew1 = 200;
+        /// <summary>
+        /// 平滑滚动的速率。
+        /// </summary>
         public float mSmoothDumpRate = 0.3f;
         public float mSnapFinishThreshold = 0.01f;
         public float mSnapVecThreshold = 145;
@@ -210,12 +218,43 @@ namespace SuperScrollView
         /// 所有绑定的预制的List
         /// </summary>
         List<ItemPool> mItemPoolList = new List<ItemPool>();
+
+        /// <summary>
+        /// 节点界面上拖过去的Item预制
+        /// </summary>
         [SerializeField]
         List<ItemPrefabConfData> mItemPrefabDataList = new List<ItemPrefabConfData>();
 
+        /// <summary>
+        /// 节点界面上的列表生成方向
+        /// </summary>
         [SerializeField]
         private ListItemArrangeType mArrangeType = ListItemArrangeType.TopToBottom;
         public ListItemArrangeType ArrangeType { get { return mArrangeType; } set { mArrangeType = value; } }
+
+        [SerializeField]
+        bool mSupportScrollBar = true;
+        [SerializeField]
+        bool mItemInterruptAnim = false;
+        /// <summary>
+        /// 启用此选项后，当滚动结束时，组件会自动将某个 Item 吸附（Snap） 到预设的位置，提升交互体验。常用于居中或边界吸附。
+        /// </summary>
+        [SerializeField]
+        bool mItemSnapEnable = false;
+
+        /// <summary>
+        /// 该属性定义 Item 自身的吸附枢轴点，采用 归一化比例坐标：(0,0) 表示 Item 的左下角。(1,1) 表示 Item 的右上角。(0.5, 0.5) 表示吸附在 Item 的中心。
+        /// </summary>
+        [SerializeField]
+        Vector2 mItemSnapPivot = Vector2.zero;
+
+        /// <summary>
+        /// 该属性定义 ScrollRect Viewport 的吸附枢轴点，决定 Item 吸附时在 Viewport 中的位置。(0,0) 表示 Viewport 的左下角。(1,1) 表示 Viewport 的右上角。
+        /// </summary>
+        [SerializeField]
+        Vector2 mViewPortSnapPivot = Vector2.zero;
+
+
 
         /// <summary>
         /// 装所有 LoopListViewItem2 的List
@@ -236,7 +275,7 @@ namespace SuperScrollView
         RectTransform mViewPortRectTransform = null;
         float mItemDefaultWithPaddingSize = 20;
         /// <summary>
-        /// SetListItemCount中设置需要显示的Item的总数
+        /// SetListItemCount中设置需要显示的Item的总数。  值为 -1：表示 Item 数量是无限的，此时不支持滚动条（Scrollbar）。ItemIndex 的范围从 负无穷到正无穷。值为 >= 0：表示 Item 数量是有限的，ItemIndex 的范围从 0 到 itemTotalCount - 1。
         /// </summary>
         int mItemTotalCount = 0;
         bool mIsVertList = false;
@@ -253,10 +292,7 @@ namespace SuperScrollView
         float mDistanceForNew0 = 200;
         float mDistanceForRecycle1 = 300;
         float mDistanceForNew1 = 200;
-        [SerializeField]
-        bool mSupportScrollBar = true;
-        [SerializeField]
-        bool mItemInterruptAnim = false;
+
         bool mIsDraging = false;
         PointerEventData mPointerEventData = null;
         public System.Action<PointerEventData> mOnBeginDragAction = null;
@@ -293,7 +329,10 @@ namespace SuperScrollView
         {
             mOnSnapNearestChanged = callback;
         }
-        
+
+        /// <summary>
+        /// 当某个 Item 进入 ScrollRect 的 Viewport时，系统会调用该回调函数.
+        /// </summary>
         public System.Func<LoopListView2, int, LoopListViewItem2> OnGetItemByIndex
         {
             set => mOnGetItemByIndex = value;
@@ -311,8 +350,7 @@ namespace SuperScrollView
         float mSmoothDumpRate = 0.3f;
         float mSnapFinishThreshold = 0.1f;
         float mSnapVecThreshold = 145;
-        [SerializeField]
-        bool mItemSnapEnable = false;
+
 
         /// <summary>
         /// 每帧更新Content的localPosition
@@ -327,10 +365,7 @@ namespace SuperScrollView
         Vector2 mAdjustedVec;
         bool mNeedAdjustVec = false;
         int mLeftSnapUpdateExtraCount = 1;
-        [SerializeField]
-        Vector2 mViewPortSnapPivot = Vector2.zero;
-        [SerializeField]
-        Vector2 mItemSnapPivot = Vector2.zero;
+
         ClickEventListener mScrollBarClickEventListener = null;
         SnapData mCurSnapData = new SnapData();
         Vector3 mLastSnapCheckPos = Vector3.zero;
@@ -565,6 +600,12 @@ namespace SuperScrollView
         If this parameter is set a value >=0 , then the ItemIndex can only be from 0 to itemTotalCount -1.  
         If resetPos is set false, then the scrollrect’s content position will not changed after this method finished.
         */
+        /// <summary>
+        /// 用于在运行时设置滚动视图中的 Item 总数。
+        /// </summary>
+        /// <param name="itemCount"></param>
+        /// <param name="resetPos"></param>
+        /// <param name="needMoveToIndex"></param>
         public void SetListItemCount(int itemCount, bool resetPos = true,bool needMoveToIndex = true)
         {
             if(itemCount == mItemTotalCount)
