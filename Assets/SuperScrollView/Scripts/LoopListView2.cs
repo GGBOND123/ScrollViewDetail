@@ -162,7 +162,7 @@ namespace SuperScrollView
         /// Item的Rect根据不同的ArrangeType，距离边缘的偏移值
         /// </summary>
         public float mStartPosOffset = 0;   
-        public float mItemHeight = 0;           //??
+        public float mItemHeight = 0;           //??dw
         public bool mAnimationCancle = false;
         public string mAnimatorPath = string.Empty;
     }
@@ -275,7 +275,7 @@ namespace SuperScrollView
         RectTransform mViewPortRectTransform = null;
         float mItemDefaultWithPaddingSize = 20;
         /// <summary>
-        /// SetListItemCount中设置需要显示的Item的总数。  值为 -1：表示 Item 数量是无限的，此时不支持滚动条（Scrollbar）。ItemIndex 的范围从 负无穷到正无穷。值为 >= 0：表示 Item 数量是有限的，ItemIndex 的范围从 0 到 itemTotalCount - 1。
+        /// SetListItemCount中设置Item的数据总数。  值为 -1：表示 Item 数量是无限的，此时不支持滚动条（Scrollbar）。ItemIndex 的范围从 负无穷到正无穷。值为 >= 0：表示 Item 数量是有限的，ItemIndex 的范围从 0 到 itemTotalCount - 1。
         /// </summary>
         int mItemTotalCount = 0;
         bool mIsVertList = false;
@@ -1401,6 +1401,11 @@ namespace SuperScrollView
         }
 
 
+        /// <summary>
+        /// 更新item在content中的本地Pos，数据层的高度
+        /// </summary>
+        /// <param name="itemIndex"></param>
+        /// <returns></returns>
         float GetItemPos(int itemIndex)
         {
             return mItemPosMgr.GetItemPos(itemIndex);
@@ -3040,11 +3045,15 @@ namespace SuperScrollView
             {
                 float pos = 0;
                 if (mSupportScrollBar)
-                {
+                {   
+                    //计算第一个显示的Item的高度
                     pos = -GetItemPos(mItemList[0].ItemIndex);
                 }
+                //第一个显示的Item的在Content中的localposY
                 float pos1 = mItemList[0].CachedRectTransform.localPosition.y;
-                float d = pos - pos1;
+                float distance = pos - pos1;
+
+                //根据第一个显示的Item的Pos更新后续Item的高度
                 float curY = pos;
                 for (int i = 0; i < count; ++i)
                 {
@@ -3052,10 +3061,10 @@ namespace SuperScrollView
                     item.CachedRectTransform.localPosition = new Vector3(item.StartPosOffset, curY, 0);
                     curY = curY - item.CachedRectTransform.rect.height - item.Padding;
                 }
-                if(d != 0)
+                if(distance != 0)
                 {
                     Vector2 p = mContainerTrans.localPosition;
-                    p.y = p.y - d;
+                    p.y = p.y - distance;
                     //mContainerTrans.localPosition = p;
                     SetContainerLocalPosY(p.y);
                 }

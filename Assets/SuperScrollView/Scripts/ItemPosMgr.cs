@@ -13,19 +13,34 @@ namespace SuperScrollView
         /// Group中每个Item的Size的List
         /// </summary>
         public float[] mItemSizeArray = null;
+        /// <summary>
+        /// 当前Group中所有Item的Pos位置，第一个Item的StartPos为0，后续Item的计算为上一个Item的Pos加上上一个Item的高度
+        /// </summary>
         public float[] mItemStartPosArray = null;
         /// <summary>
         /// 当前Group的Item数量
         /// </summary>
         public int mItemCount = 0;
+        /// <summary>
+        /// 当前Group内，标记为脏的Index
+        /// </summary>
         int mDirtyBeginIndex = ItemPosMgr.mItemMaxCountPerGroup;
         /// <summary>
         /// 单个Gourp的Size大小之和
         /// </summary>
         public float mGroupSize = 0;
+        /// <summary>
+        /// 单个Group在Content大小中的StartPos，第一个Group的开始位置为0
+        /// </summary>
         public float mGroupStartPos = 0;
+        /// <summary>
+        /// 单个Group在Content大小中的EndPos
+        /// </summary>
         public float mGroupEndPos = 0;
         public int mGroupIndex = 0;
+        /// <summary>
+        /// Item的高度未赋值时的默认高度
+        /// </summary>
         float mItemDefaultSize = 0;
         /// <summary>
         /// 当前Group最大Item的Index
@@ -46,8 +61,11 @@ namespace SuperScrollView
                 for (int i = 0; i < mItemSizeArray.Length; ++i)
                     mItemSizeArray[i] = mItemDefaultSize;
             }
+            
+            //当前Group中第一个Item的StartPos为0
             mItemStartPosArray = new float[ItemPosMgr.mItemMaxCountPerGroup];
             mItemStartPosArray[0] = 0;
+            
             mItemCount = ItemPosMgr.mItemMaxCountPerGroup;
             mGroupSize = mItemDefaultSize * mItemSizeArray.Length;
             //如果itemDefaultSize为0，直接从最后一个索引 才开始标记为脏。
@@ -61,6 +79,7 @@ namespace SuperScrollView
             }
         }
 
+        //Item在Group中的Pos，Group中第一个Item为0
         public float GetItemStartPos(int index)
         {
             return mGroupStartPos + mItemStartPosArray[index];
@@ -158,10 +177,12 @@ namespace SuperScrollView
 
         public void UpdateAllItemStartPos()
         {
+            //标记为脏的index是最后一个，就不更新
             if (mDirtyBeginIndex >= mItemCount)
             {
                 return;
             }
+            //从脏的index，一直更新到该Group的最后一个item
             int startIndex = (mDirtyBeginIndex < 1) ? 1 : mDirtyBeginIndex;
             for (int i = startIndex; i < mItemCount; ++i)
             {
@@ -187,7 +208,7 @@ namespace SuperScrollView
         /// </summary>
         private List<ItemSizeGroup> mItemSizeGroupList = new List<ItemSizeGroup>();
         /// <summary>
-        /// 第一个为脏的Item 的 Index
+        /// 第一个为脏的Item 的 第Index个ItemSizeGroup
         /// </summary>
         private int mDirtyBeginIndex = int.MaxValue;
 
@@ -290,6 +311,7 @@ namespace SuperScrollView
                 mMaxNotEmptyGroupIndex = groupIndex;
         }
 
+        //Item在Group中的Pos，Group中第一个Item为0
         public float GetItemPos(int itemIndex)
         {
             Update(true);
@@ -358,7 +380,7 @@ namespace SuperScrollView
         }
 
         /// <summary>
-        ///updateAll：false时，只更新mDirtyBeginIndex 第一个为脏的Item 的 Index
+        ///updateAll：false时，只更新mDirtyBeginIndex 第一个为脏的Group内的Item的StartPos等数据。
         /// </summary>
         /// <param name="updateAll"></param>
         public void Update(bool updateAll)
@@ -369,6 +391,7 @@ namespace SuperScrollView
             if (mDirtyBeginIndex >= count)
                 return;
 
+            //更新Group的StartPos和EndPos
             int loopCount = 0;
             for (int i = mDirtyBeginIndex; i < count; ++i)
             {
