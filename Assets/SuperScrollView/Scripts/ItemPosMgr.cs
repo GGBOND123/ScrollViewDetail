@@ -92,15 +92,25 @@ namespace SuperScrollView
                 return (mDirtyBeginIndex < mItemCount);
             }
         }
+
+        /// <summary>
+        /// 设置第index（数据层上的）个Item的高度，并且更新标记为脏的index值。返回该Item需要移动的pos值
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
         public float SetItemSize(int index, float size)
         {
-            if(index > mMaxNoZeroIndex && size > 0)
+            //更新mMaxNoZeroIndex值
+            if (index > mMaxNoZeroIndex && size > 0)
                 mMaxNoZeroIndex = index;
             
+            //跟新前后size相同，返回
             float old = mItemSizeArray[index];
             if (old == size)
                 return 0;
             
+            //如果当前更新的index比标记为脏的数据index靠前，更新脏的index值
             mItemSizeArray[index] = size;
             if (index < mDirtyBeginIndex)
                 mDirtyBeginIndex = index;
@@ -299,6 +309,7 @@ namespace SuperScrollView
             int indexInGroup = itemIndex % mItemMaxCountPerGroup;
             ItemSizeGroup tGroup = mItemSizeGroupList[groupIndex];
             float changedSize = tGroup.SetItemSize(indexInGroup, size);
+            //???
             if (changedSize != 0f)
             {
                 if (groupIndex < mDirtyBeginIndex)

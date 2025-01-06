@@ -211,11 +211,11 @@ namespace SuperScrollView
             }
         }
         /// <summary>
-        /// <prefabName, 绑定的预制池之一>
+        /// <prefabName, 绑定的预制对应的对象池>，初始化时添加
         /// </summary>
         Dictionary<string, ItemPool> mItemPoolDict = new Dictionary<string, ItemPool>();
         /// <summary>
-        /// 所有绑定的预制的List
+        /// 所有绑定的预制的对象池List，初始化时添加
         /// </summary>
         List<ItemPool> mItemPoolList = new List<ItemPool>();
 
@@ -364,12 +364,19 @@ namespace SuperScrollView
         /// </summary>
         Vector2 mAdjustedVec;
         bool mNeedAdjustVec = false;
+
+        /// <summary>
+        /// 是否需要额外调一次刷新snap的数值
+        /// </summary>
         int mLeftSnapUpdateExtraCount = 1;
 
         ClickEventListener mScrollBarClickEventListener = null;
         SnapData mCurSnapData = new SnapData();
+
+        /// <summary>
+        /// Update中，当前帧Content的localPosition  和 上一帧Content的localPosition 的差值。
+        /// </summary>
         Vector3 mLastSnapCheckPos = Vector3.zero;
-        bool mListViewInited = false;
         int mListUpdateCheckFrameCount = 0;
         public bool IsVertList
         {
@@ -485,12 +492,6 @@ namespace SuperScrollView
             LoopListViewInitParam initParam = null, 
             Func<LoopListView2, int, string> onGetItemNameByIndex = null)
         {
-            if (mListViewInited == true) //如果已经初始化过了,没有必要再走一次,所有很多时候都是定义在awake、init的地方,但是对于lua这个就有问题了
-            {
-                mOnGetItemNameByIndex = onGetItemNameByIndex;
-                mOnGetItemByIndex = onGetItemByIndex;
-                return;
-            }
             if(initParam != null)
             {
                 mDistanceForRecycle0 = initParam.mDistanceForRecycle0;
@@ -543,11 +544,6 @@ namespace SuperScrollView
             InitItemPool();
             mOnGetItemByIndex = onGetItemByIndex;
             mOnGetItemNameByIndex = onGetItemNameByIndex;
-            if (mListViewInited == true)
-            {
-                Debug.LogError("LoopListView2.InitListView method can be called only once.");
-            }
-            mListViewInited = true;
             ResetListView();
             SetListItemCount(itemTotalCount, true);
         }
@@ -1603,17 +1599,6 @@ namespace SuperScrollView
 
         void Update()
         {
-#if UNITY_EDITOR && false
-            if (_isOccurError)
-            {
-                return;
-            }
-#endif
-            
-            if(mListViewInited == false)
-            {
-                return;
-            }
             if(mNeedAdjustVec)
             {
                 mNeedAdjustVec = false;
