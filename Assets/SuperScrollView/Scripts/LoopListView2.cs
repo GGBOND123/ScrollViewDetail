@@ -343,8 +343,13 @@ namespace SuperScrollView
             set => mOnGetItemNameByIndex = value;
         }
 
-
+        /// <summary>
+        /// SetItemSize()更新高度时，设置最新设置的那个Item的Index
+        /// </summary>
         int mLastItemIndex = 0;
+        /// <summary>
+        /// SetItemSize()更新高度时，设置最新设置的那个Item的Padding
+        /// </summary>
         float mLastItemPadding = 0;
         float mSmoothDumpVel = 0;
         float mSmoothDumpRate = 0.3f;
@@ -363,6 +368,9 @@ namespace SuperScrollView
         /// 调用UpdateAllShownItemsPos()时，当前帧Content的localPosition  和 上一帧Content的localPosition 的差值。
         /// </summary>
         Vector2 mAdjustedVec;
+        /// <summary>
+        /// 是否需要在Update中调节滑动速度。  在拖动状态下，UpdateAllShownItemsPos 函数会刷新该值
+        /// </summary>
         bool mNeedAdjustVec = false;
 
         /// <summary>
@@ -2590,9 +2598,6 @@ namespace SuperScrollView
         }
 
 
-
-
-
         bool UpdateForHorizontalList(float distanceForRecycle0, float distanceForRecycle1, float distanceForNew0, float distanceForNew1)
         {
             if (mItemTotalCount == 0)
@@ -3127,6 +3132,7 @@ namespace SuperScrollView
                 }
 
             }
+            //如果在拖拽中，就将UGUI的ScrollRect标记为脏
             if (mIsDraging)
             {
                 mScrollRect.OnBeginDrag(mPointerEventData);
