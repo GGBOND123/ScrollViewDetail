@@ -639,30 +639,30 @@ namespace SuperScrollView
             mLeftSnapUpdateExtraCount = 1;
             mNeedCheckNextMaxItem = true;
             mNeedCheckNextMinItem = true;
-            if (resetPos)
-            {
-                MovePanelToItemIndex(0, 0);
-                return;
-            }
-            if (mItemList.Count == 0)
-            {
-                MovePanelToItemIndex(0, 0);
-                return;
-            }
+            //if (resetPos)
+            //{
+            //    MovePanelToItemIndex(0, 0);
+            //    return;
+            //}
+            //if (mItemList.Count == 0)
+            //{
+            //    MovePanelToItemIndex(0, 0);
+            //    return;
+            //}
 
             //如果给定的数据总数量 大于最后一个显示 Item 的数据索引时 才更新。 虽然不知道为毛要这么设计 无语
-            int maxItemIndex = mItemTotalCount - 1;
-            int lastItemIndex = mItemList[mItemList.Count - 1].ItemIndex;
-            if (lastItemIndex <= maxItemIndex)
-            {
+            //int maxItemIndex = mItemTotalCount - 1;
+            //int lastItemIndex = mItemList[mItemList.Count - 1].ItemIndex;
+            //if (lastItemIndex <= maxItemIndex)
+            //{
                 UpdateContentSize();
                 UpdateAllShownItemsPos();
-                return;
-            }
-            if (needMoveToIndex)
-            {
-                MovePanelToItemIndex(maxItemIndex, 0);
-            }
+                //return;
+            //}
+            //if (needMoveToIndex)
+            //{
+            //    MovePanelToItemIndex(maxItemIndex, 0);
+            //}
         }
 
         //To get the visible item by itemIndex. If the item is not visible, then this method return null.
@@ -1607,32 +1607,32 @@ namespace SuperScrollView
 
         void Update()
         {
-            if(mNeedAdjustVec)
-            {
-                mNeedAdjustVec = false;
-                if(mIsVertList)
-                {
-                    if(mScrollRect.velocity.y * mAdjustedVec.y > 0)
-                    {
-                        //mScrollRect.velocity = mAdjustedVec;
-                        SetVelocity(mAdjustedVec);
-                    }
-                }
-                else
-                {
-                    if (mScrollRect.velocity.x * mAdjustedVec.x > 0)
-                    {
-                        //mScrollRect.velocity = mAdjustedVec;
-                        SetVelocity(mAdjustedVec);
-                    }
-                }
+            //if(mNeedAdjustVec)
+            //{
+            //    mNeedAdjustVec = false;
+            //    if(mIsVertList)
+            //    {
+            //        if(mScrollRect.velocity.y * mAdjustedVec.y > 0)
+            //        {
+            //            //mScrollRect.velocity = mAdjustedVec;
+            //            SetVelocity(mAdjustedVec);
+            //        }
+            //    }
+            //    else
+            //    {
+            //        if (mScrollRect.velocity.x * mAdjustedVec.x > 0)
+            //        {
+            //            //mScrollRect.velocity = mAdjustedVec;
+            //            SetVelocity(mAdjustedVec);
+            //        }
+            //    }
                 
-            }
+            //}
             if (mSupportScrollBar)
             {
                 mItemPosMgr.Update(false);
             }
-            UpdateSnapMove();
+            //UpdateSnapMove();
             UpdateListView(mDistanceForRecycle0, mDistanceForRecycle1, mDistanceForNew0, mDistanceForNew1);
             ClearAllTmpRecycledItem();
             mLastFrameContainerPos = mContainerTrans.localPosition;
@@ -2257,6 +2257,7 @@ namespace SuperScrollView
                 while (needContinueCheck)
                 {
                     checkCount++;
+                    Debug.LogError(checkCount);
                     if(checkCount >= maxCount)
                     {
                         Debug.LogError("UpdateListView Vertical while loop " + checkCount + " times! something is wrong!");
@@ -2295,6 +2296,11 @@ namespace SuperScrollView
                 }
                 return false;
             }
+
+
+
+
+
             if (mArrangeType == ListItemArrangeType.TopToBottom)
             {
                 int itemListCount = mItemList.Count;

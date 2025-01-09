@@ -218,7 +218,7 @@ namespace SuperScrollView
         /// </summary>
         private List<ItemSizeGroup> mItemSizeGroupList = new List<ItemSizeGroup>();
         /// <summary>
-        /// 第一个为脏的Item 的 第Index个ItemSizeGroup
+        /// 第Index个开始脏的ItemSizeGroup
         /// </summary>
         private int mDirtyBeginIndex = int.MaxValue;
 
@@ -309,7 +309,6 @@ namespace SuperScrollView
             int indexInGroup = itemIndex % mItemMaxCountPerGroup;
             ItemSizeGroup tGroup = mItemSizeGroupList[groupIndex];
             float changedSize = tGroup.SetItemSize(indexInGroup, size);
-            //???
             if (changedSize != 0f)
             {
                 if (groupIndex < mDirtyBeginIndex)
@@ -331,6 +330,7 @@ namespace SuperScrollView
             return mItemSizeGroupList[groupIndex].GetItemStartPos(indexInGroup);
         }
 
+        //根据当前Index获取滑动条的位置啥的，未仔细看
         public bool GetItemIndexAndPosAtGivenPos(float pos, ref int index, ref float itemPos)
         {
             Update(true);

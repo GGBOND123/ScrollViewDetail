@@ -106,7 +106,8 @@ namespace SuperScrollView
             {
                 return;
             }
-            mLoopListView.SetListItemCount(count, false);
+            mLoopListView.SetListItemCount(count, false,false);
+            //mLoopListView.ForceUpdate();
         }
 
     }
