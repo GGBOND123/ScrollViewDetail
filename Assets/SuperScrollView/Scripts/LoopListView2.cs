@@ -650,7 +650,7 @@ namespace SuperScrollView
                 return;
             }
 
-            //如果给定的Item数量 大于列表数据数的数量时，
+            //如果给定的数据总数量 大于最后一个显示 Item 的数据索引时 才更新。 虽然不知道为毛要这么设计 无语
             int maxItemIndex = mItemTotalCount - 1;
             int lastItemIndex = mItemList[mItemList.Count - 1].ItemIndex;
             if (lastItemIndex <= maxItemIndex)
