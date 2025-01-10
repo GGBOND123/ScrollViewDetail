@@ -257,7 +257,7 @@ namespace SuperScrollView
 
 
         /// <summary>
-        /// 装所有 LoopListViewItem2 的List
+        /// 屏幕上待显示的所有 LoopListViewItem2。  扩展方式：在UpdateListView中，每次while循环都会判断数组第一个or最后一个是否在显示上下范围内，从而进行增减。
         /// </summary>
         List<LoopListViewItem2> mItemList = new List<LoopListViewItem2>();
         /// <summary>
@@ -281,10 +281,26 @@ namespace SuperScrollView
         bool mIsVertList = false;
         Func<LoopListView2, int, LoopListViewItem2> mOnGetItemByIndex;
         Func<LoopListView2, int, string> mOnGetItemNameByIndex;
+
+        /// <summary>
+        /// 单个Item获取四个边角的世界坐标，多地使用
+        /// </summary>
         Vector3[] mItemWorldCorners = new Vector3[4];
+
+        /// <summary>
+        /// Viewport的四个边角的局部坐标
+        /// </summary>
         Vector3[] mViewPortRectLocalCorners = new Vector3[4];
+
+        /// <summary>
+        /// UpdateListView()中，mItemList数组尾部增加时，上一次While循环中的增加的尾部数据Index
+        /// </summary>
         int mCurReadyMinItemIndex = 0;
+        /// <summary>
+        /// UpdateListView()中，mItemList数组头部增加时，上一次While循环中的增加的头部数据Index
+        /// </summary>
         int mCurReadyMaxItemIndex = 0;
+        
         bool mNeedCheckNextMinItem = true;
         bool mNeedCheckNextMaxItem = true;
         ItemPosMgr mItemPosMgr = null;
@@ -490,71 +506,6 @@ namespace SuperScrollView
             }
         }
 
-        /*
-        InitListView method is to initiate the LoopListView2 component. There are 3 parameters:
-        itemTotalCount: the total item count in the listview. If this parameter is set -1, then means there are infinite items, and scrollbar would not be supported, and the ItemIndex can be from –MaxInt to +MaxInt. If this parameter is set a value >=0 , then the ItemIndex can only be from 0 to itemTotalCount -1.
-        onGetItemByIndex: when a item is getting in the scrollrect viewport, and this Action will be called with the item’ index as a parameter, to let you create the item and update its content.
-        */
-        public void InitListView(int itemTotalCount,
-            Func<LoopListView2, int, LoopListViewItem2> onGetItemByIndex,
-            LoopListViewInitParam initParam = null, 
-            Func<LoopListView2, int, string> onGetItemNameByIndex = null)
-        {
-            if(initParam != null)
-            {
-                mDistanceForRecycle0 = initParam.mDistanceForRecycle0;
-                mDistanceForNew0 = initParam.mDistanceForNew0;
-                mDistanceForRecycle1 = initParam.mDistanceForRecycle1;
-                mDistanceForNew1 = initParam.mDistanceForNew1;
-                mSmoothDumpRate = initParam.mSmoothDumpRate;
-                mSnapFinishThreshold = initParam.mSnapFinishThreshold;
-                mSnapVecThreshold = initParam.mSnapVecThreshold;
-                mItemDefaultWithPaddingSize = initParam.mItemDefaultWithPaddingSize;
-            }
-            mScrollRect = gameObject.GetComponent<ScrollRect>();
-            if (mScrollRect == null)
-            {
-                Debug.LogError("ListView Init Failed! ScrollRect component not found!");
-                return;
-            }
-            if(mDistanceForRecycle0 <= mDistanceForNew0)
-            {
-                Debug.LogError("mDistanceForRecycle0 should be bigger than mDistanceForNew0");
-            }
-            if (mDistanceForRecycle1 <= mDistanceForNew1)
-            {
-                Debug.LogError("mDistanceForRecycle1 should be bigger than mDistanceForNew1");
-            }
-            mCurSnapData.Clear();
-            mItemPosMgr = new ItemPosMgr(mItemDefaultWithPaddingSize);
-            mScrollRectTransform = mScrollRect.GetComponent<RectTransform>();
-            mContainerTrans = mScrollRect.content;
-            mViewPortRectTransform = mScrollRect.viewport;
-            if (mViewPortRectTransform == null)
-            {
-                mViewPortRectTransform = mScrollRectTransform;
-            }
-            if (mScrollRect.horizontalScrollbarVisibility == ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport && mScrollRect.horizontalScrollbar != null)
-            {
-                Debug.LogError("ScrollRect.horizontalScrollbarVisibility cannot be set to AutoHideAndExpandViewport");
-            }
-            if (mScrollRect.verticalScrollbarVisibility == ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport && mScrollRect.verticalScrollbar != null)
-            {
-                Debug.LogError("ScrollRect.verticalScrollbarVisibility cannot be set to AutoHideAndExpandViewport");
-            }
-            mIsVertList = (mArrangeType == ListItemArrangeType.TopToBottom || mArrangeType == ListItemArrangeType.BottomToTop);
-            mScrollRect.horizontal = !mIsVertList;
-            mScrollRect.vertical = mIsVertList;
-            SetScrollbarListener();
-            AdjustPivot(mViewPortRectTransform);
-            AdjustAnchor(mContainerTrans);
-            AdjustContainerPivot(mContainerTrans);
-            InitItemPool();
-            mOnGetItemByIndex = onGetItemByIndex;
-            mOnGetItemNameByIndex = onGetItemNameByIndex;
-            ResetListView();
-            SetListItemCount(itemTotalCount, true);
-        }
 
         void SetScrollbarListener()
         {
@@ -597,73 +548,7 @@ namespace SuperScrollView
         }
 
 
-        /*
-        This method may use to set the item total count of the scrollview at runtime. 
-        If this parameter is set -1, then means there are infinite items,
-        and scrollbar would not be supported, and the ItemIndex can be from –MaxInt to +MaxInt. 
-        If this parameter is set a value >=0 , then the ItemIndex can only be from 0 to itemTotalCount -1.  
-        If resetPos is set false, then the scrollrect’s content position will not changed after this method finished.
-        */
-        /// <summary>
-        /// 用于在运行时设置滚动视图中的 Item 总数。
-        /// </summary>
-        /// <param name="itemCount"></param>
-        /// <param name="resetPos"></param>
-        /// <param name="needMoveToIndex"></param>
-        public void SetListItemCount(int itemCount, bool resetPos = true,bool needMoveToIndex = true)
-        {
-            if(itemCount == mItemTotalCount)
-                return;
-            mCurSnapData.Clear();
-            mItemTotalCount = itemCount;
-            if (mItemTotalCount < 0)
-                mSupportScrollBar = false;
-            if (mSupportScrollBar)
-                mItemPosMgr.SetItemMaxCount(mItemTotalCount);
-            else
-                mItemPosMgr.SetItemMaxCount(0);
-            
-            if (mItemTotalCount == 0)
-            {
-                mCurReadyMaxItemIndex = 0;
-                mCurReadyMinItemIndex = 0;
-                mNeedCheckNextMaxItem = false;
-                mNeedCheckNextMinItem = false;
-                RecycleAllItem();
-                ClearAllTmpRecycledItem();
-                UpdateContentSize();
-                return;
-            }
-
-
-            mLeftSnapUpdateExtraCount = 1;
-            mNeedCheckNextMaxItem = true;
-            mNeedCheckNextMinItem = true;
-            //if (resetPos)
-            //{
-            //    MovePanelToItemIndex(0, 0);
-            //    return;
-            //}
-            //if (mItemList.Count == 0)
-            //{
-            //    MovePanelToItemIndex(0, 0);
-            //    return;
-            //}
-
-            //如果给定的数据总数量 大于最后一个显示 Item 的数据索引时 才更新。 虽然不知道为毛要这么设计 无语
-            //int maxItemIndex = mItemTotalCount - 1;
-            //int lastItemIndex = mItemList[mItemList.Count - 1].ItemIndex;
-            //if (lastItemIndex <= maxItemIndex)
-            //{
-                UpdateContentSize();
-                UpdateAllShownItemsPos();
-                //return;
-            //}
-            //if (needMoveToIndex)
-            //{
-            //    MovePanelToItemIndex(maxItemIndex, 0);
-            //}
-        }
+      
 
         //To get the visible item by itemIndex. If the item is not visible, then this method return null.
         public LoopListViewItem2 GetShownItemByItemIndex(int itemIndex)
@@ -947,151 +832,7 @@ namespace SuperScrollView
             return pos;
         }
 
-        /*
-        This method will move the scrollrect content’s position to ( the positon of itemIndex-th item + offset ),
-        and in current version the itemIndex is from 0 to MaxInt, offset is from 0 to scrollrect viewport size. 
-        */ 
-        public void MovePanelToItemIndex(int itemIndex, float offset)
-        {
-            mScrollRect.StopMovement();
-            mCurSnapData.Clear();
-            if (itemIndex < 0 || mItemTotalCount == 0)
-                return;
-            
-            if (mItemTotalCount > 0 && itemIndex >= mItemTotalCount)
-                itemIndex = mItemTotalCount - 1;
-            
-            if (offset < 0)
-                offset = 0;
-            
-            Vector3 pos = Vector3.zero;
-            float viewPortSize = ViewPortSize;
-            if (offset > viewPortSize)
-                offset = viewPortSize;
-            
-            
-            if (mArrangeType == ListItemArrangeType.TopToBottom)
-            {
-                float containerPos = mContainerTrans.localPosition.y;
-                if (containerPos < 0)
-                {
-                    containerPos = 0;
-                }
-                pos.y = -containerPos - offset;
-            }
-            else if (mArrangeType == ListItemArrangeType.BottomToTop)
-            {
-                float containerPos = mContainerTrans.localPosition.y;
-                if (containerPos > 0)
-                {
-                    containerPos = 0;
-                }
-                pos.y = -containerPos + offset;
-            }
-            else if (mArrangeType == ListItemArrangeType.LeftToRight)
-            {
-                float containerPos = mContainerTrans.localPosition.x;
-                if (containerPos > 0)
-                {
-                    containerPos = 0;
-                }
-                pos.x = -containerPos + offset;
-            }
-            else if (mArrangeType == ListItemArrangeType.RightToLeft)
-            {
-                float containerPos = mContainerTrans.localPosition.x;
-                if (containerPos < 0)
-                {
-                    containerPos = 0;
-                }
-                pos.x = -containerPos - offset;
-            }
-            
-            RecycleAllItem();
-            LoopListViewItem2 newItem = GetNewItemByIndex(itemIndex);
-            if (newItem == null)
-            {
-                ClearAllTmpRecycledItem();
-                return;
-            }
-            if (mIsVertList)
-                pos.x = newItem.StartPosOffset;
-            else
-                pos.y = newItem.StartPosOffset;
-            
-            newItem.CachedRectTransform.localPosition = pos;
-            if (mSupportScrollBar)
-            {
-                if (mIsVertList)
-                    SetItemSize(itemIndex, newItem.CachedRectTransform.rect.height, newItem.Padding);
-                else
-                    SetItemSize(itemIndex, newItem.CachedRectTransform.rect.width, newItem.Padding);
-            }
-
-            mItemList.Add(newItem);
-            UpdateContentSize();
-            UpdateListView(viewPortSize + 100, viewPortSize + 100, viewPortSize, viewPortSize);
-            AdjustPanelPos();
-            ClearAllTmpRecycledItem();
-        }
-
-        //update all visible items.
-        public void RefreshAllShownItem()
-        {
-            int count = mItemList.Count;
-            if (count == 0)
-            {
-                return;
-            }
-            RefreshAllShownItemWithFirstIndex(mItemList[0].ItemIndex);
-        }
-
-
-        public void RefreshAllShownItemWithFirstIndex(int firstItemIndex)
-        {
-            int count = mItemList.Count;
-            if (count == 0)
-            {
-                return;
-            }
-            LoopListViewItem2 firstItem = mItemList[0];
-            Vector3 pos = firstItem.CachedRectTransform.localPosition;
-            RecycleAllItem();
-            for (int i = 0; i < count; ++i)
-            {
-                int curIndex = firstItemIndex + i;
-                LoopListViewItem2 newItem = GetNewItemByIndex(curIndex);
-                if (newItem == null)
-                {
-                    break;
-                }
-                if (mIsVertList)
-                {
-                    pos.x = newItem.StartPosOffset;
-                }
-                else
-                {
-                    pos.y = newItem.StartPosOffset;
-                }
-                newItem.CachedRectTransform.localPosition = pos;
-                if (mSupportScrollBar)
-                {
-                    if (mIsVertList)
-                    {
-                        SetItemSize(curIndex, newItem.CachedRectTransform.rect.height, newItem.Padding);
-                    }
-                    else
-                    {
-                        SetItemSize(curIndex, newItem.CachedRectTransform.rect.width, newItem.Padding);
-                    }
-                }
-
-                mItemList.Add(newItem);
-            }
-            UpdateContentSize();
-            UpdateAllShownItemsPos();
-            ClearAllTmpRecycledItem();
-        }
+       
 
 
         public void RefreshAllShownItemWithFirstIndexAndPos(int firstItemIndex,Vector3 pos)
@@ -1380,11 +1121,12 @@ namespace SuperScrollView
             }
             newItem.ItemIndex = index;
             newItem.ItemCreatedCheckFrameCount = mListUpdateCheckFrameCount;
+
             return newItem;
         }
 
         /// <summary>
-        /// 仅用于启用滚轮的时候会调该函数
+        /// 设置ItemMgr中存储的数据层中第itemIndex个Item的的高度 
         /// </summary>
         /// <param name="itemIndex"></param>
         /// <param name="itemSize"></param>
@@ -1605,44 +1347,6 @@ namespace SuperScrollView
 
         private bool _isOccurError = false;
 
-        void Update()
-        {
-            //if(mNeedAdjustVec)
-            //{
-            //    mNeedAdjustVec = false;
-            //    if(mIsVertList)
-            //    {
-            //        if(mScrollRect.velocity.y * mAdjustedVec.y > 0)
-            //        {
-            //            //mScrollRect.velocity = mAdjustedVec;
-            //            SetVelocity(mAdjustedVec);
-            //        }
-            //    }
-            //    else
-            //    {
-            //        if (mScrollRect.velocity.x * mAdjustedVec.x > 0)
-            //        {
-            //            //mScrollRect.velocity = mAdjustedVec;
-            //            SetVelocity(mAdjustedVec);
-            //        }
-            //    }
-                
-            //}
-            if (mSupportScrollBar)
-            {
-                mItemPosMgr.Update(false);
-            }
-            //UpdateSnapMove();
-            UpdateListView(mDistanceForRecycle0, mDistanceForRecycle1, mDistanceForNew0, mDistanceForNew1);
-            ClearAllTmpRecycledItem();
-            mLastFrameContainerPos = mContainerTrans.localPosition;
-        }
-
-        //强制刷新一次 因为当新增数据的时候调用MovePanelToItemIndex 位置不对 ， add by sunliwen
-        public void ForceUpdate()
-        {
-            Update();
-        }
 
         //update snap move. if immediate is set true, then the snap move will finish at once.
         void UpdateSnapMove(bool immediate = false)
@@ -2249,6 +1953,7 @@ namespace SuperScrollView
         public void UpdateListView(float distanceForRecycle0, float distanceForRecycle1, float distanceForNew0, float distanceForNew1)
         {
             mListUpdateCheckFrameCount++;
+            //Debug.LogError(mListUpdateCheckFrameCount);
             if (mIsVertList)
             {
                 bool needContinueCheck = true;
@@ -2257,7 +1962,6 @@ namespace SuperScrollView
                 while (needContinueCheck)
                 {
                     checkCount++;
-                    Debug.LogError(checkCount);
                     if(checkCount >= maxCount)
                     {
                         Debug.LogError("UpdateListView Vertical while loop " + checkCount + " times! something is wrong!");
@@ -2304,6 +2008,8 @@ namespace SuperScrollView
             if (mArrangeType == ListItemArrangeType.TopToBottom)
             {
                 int itemListCount = mItemList.Count;
+
+                //第一个Item走这里
                 if (itemListCount == 0)
                 {
                     float curY = mContainerTrans.localPosition.y;
@@ -2335,14 +2041,16 @@ namespace SuperScrollView
                 }
 //                if(mScrollRectTransform.anchorMax == Vector2.one && mScrollRectTransform.anchorMin == Vector2.zero)
                     mViewPortRectTransform.GetLocalCorners(mViewPortRectLocalCorners);
+
+
+                //判断显示List中第一个是否需要回收
                 LoopListViewItem2 tViewItem0 = mItemList[0];
                 tViewItem0.CachedRectTransform.GetWorldCorners(mItemWorldCorners);
-
+                //获取Item的左上、左下的世界坐标
                 Vector3 topPos0 = mViewPortRectTransform.InverseTransformPoint(mItemWorldCorners[1]);
                 Vector3 downPos0 = mViewPortRectTransform.InverseTransformPoint(mItemWorldCorners[0]);
                 
-                if (!mIsDraging && tViewItem0.ItemCreatedCheckFrameCount != mListUpdateCheckFrameCount
-                    && downPos0.y - mViewPortRectLocalCorners[1].y > distanceForRecycle0)
+                if (!mIsDraging && tViewItem0.ItemCreatedCheckFrameCount != mListUpdateCheckFrameCount && downPos0.y - mViewPortRectLocalCorners[1].y > distanceForRecycle0)
                 {
                     mItemList.RemoveAt(0);
                     RecycleItemTmp(tViewItem0);
@@ -2354,15 +2062,13 @@ namespace SuperScrollView
                     return true;
                 }
 
+
+                //判断显示List中最后一个是否需要回收
                 LoopListViewItem2 tViewItem1 = mItemList[mItemList.Count - 1];
                 tViewItem1.CachedRectTransform.GetWorldCorners(mItemWorldCorners);
-
-                
                 Vector3 topPos1 = mViewPortRectTransform.InverseTransformPoint(mItemWorldCorners[1]);
                 Vector3 downPos1 = mViewPortRectTransform.InverseTransformPoint(mItemWorldCorners[0]);
-                
-                if (!mIsDraging && tViewItem1.ItemCreatedCheckFrameCount != mListUpdateCheckFrameCount
-                    && mViewPortRectLocalCorners[0].y - topPos1.y > distanceForRecycle1)
+                if (!mIsDraging && tViewItem1.ItemCreatedCheckFrameCount != mListUpdateCheckFrameCount && mViewPortRectLocalCorners[0].y - topPos1.y > distanceForRecycle1)
                 {
                     mItemList.RemoveAt(mItemList.Count - 1);
                     RecycleItemTmp(tViewItem1);
@@ -2376,13 +2082,16 @@ namespace SuperScrollView
 
 
 
+                //该Item在Viewport下方 distanceForNew1 范围内
                 if (mViewPortRectLocalCorners[0].y - downPos1.y < distanceForNew1)
                 {
-                    if(tViewItem1.ItemIndex > mCurReadyMaxItemIndex)
+                    //如果切换数据位置，最后一个显示的数据Index比mCurReadyMaxItemIndex大，更新mCurReadyMaxItemIndex值
+                    if (tViewItem1.ItemIndex > mCurReadyMaxItemIndex)
                     {
                         mCurReadyMaxItemIndex = tViewItem1.ItemIndex;
                         mNeedCheckNextMaxItem = true;
                     }
+                    //判断下一个数据Index的状态
                     int nIndex = tViewItem1.ItemIndex + 1;
                     if (nIndex <= mCurReadyMaxItemIndex || mNeedCheckNextMaxItem)
                     {
@@ -2400,6 +2109,7 @@ namespace SuperScrollView
                                 SetItemSize(nIndex, newItem.CachedRectTransform.rect.height, newItem.Padding);
                             }
                             mItemList.Add(newItem);
+                            //尾部新增的Item的位置设为上一个的尾部。
                             float y = tViewItem1.CachedRectTransform.localPosition.y - tViewItem1.CachedRectTransform.rect.height - tViewItem1.Padding;
                             newItem.CachedRectTransform.localPosition = new Vector3(newItem.StartPosOffset, y, 0);
                             UpdateContentSize();
@@ -3215,6 +2925,362 @@ namespace SuperScrollView
                     pool.DestroyAllItem();
                 }
             }
+        }
+
+
+
+
+
+        /*
+        InitListView method is to initiate the LoopListView2 component. There are 3 parameters:
+        itemTotalCount: the total item count in the listview. If this parameter is set -1, then means there are infinite items, and scrollbar would not be supported, and the ItemIndex can be from –MaxInt to +MaxInt. If this parameter is set a value >=0 , then the ItemIndex can only be from 0 to itemTotalCount -1.
+        onGetItemByIndex: when a item is getting in the scrollrect viewport, and this Action will be called with the item’ index as a parameter, to let you create the item and update its content.
+        */
+        public void InitListView(int itemTotalCount,
+            Func<LoopListView2, int, LoopListViewItem2> onGetItemByIndex,
+            LoopListViewInitParam initParam = null,
+            Func<LoopListView2, int, string> onGetItemNameByIndex = null)
+        {
+            if (initParam != null)
+            {
+                mDistanceForRecycle0 = initParam.mDistanceForRecycle0;
+                mDistanceForNew0 = initParam.mDistanceForNew0;
+                mDistanceForRecycle1 = initParam.mDistanceForRecycle1;
+                mDistanceForNew1 = initParam.mDistanceForNew1;
+                mSmoothDumpRate = initParam.mSmoothDumpRate;
+                mSnapFinishThreshold = initParam.mSnapFinishThreshold;
+                mSnapVecThreshold = initParam.mSnapVecThreshold;
+                mItemDefaultWithPaddingSize = initParam.mItemDefaultWithPaddingSize;
+            }
+            mScrollRect = gameObject.GetComponent<ScrollRect>();
+            if (mScrollRect == null)
+            {
+                Debug.LogError("ListView Init Failed! ScrollRect component not found!");
+                return;
+            }
+            if (mDistanceForRecycle0 <= mDistanceForNew0)
+            {
+                Debug.LogError("mDistanceForRecycle0 should be bigger than mDistanceForNew0");
+            }
+            if (mDistanceForRecycle1 <= mDistanceForNew1)
+            {
+                Debug.LogError("mDistanceForRecycle1 should be bigger than mDistanceForNew1");
+            }
+            mCurSnapData.Clear();
+            mItemPosMgr = new ItemPosMgr(mItemDefaultWithPaddingSize);
+            mScrollRectTransform = mScrollRect.GetComponent<RectTransform>();
+            mContainerTrans = mScrollRect.content;
+            mViewPortRectTransform = mScrollRect.viewport;
+            if (mViewPortRectTransform == null)
+            {
+                mViewPortRectTransform = mScrollRectTransform;
+            }
+            if (mScrollRect.horizontalScrollbarVisibility == ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport && mScrollRect.horizontalScrollbar != null)
+            {
+                Debug.LogError("ScrollRect.horizontalScrollbarVisibility cannot be set to AutoHideAndExpandViewport");
+            }
+            if (mScrollRect.verticalScrollbarVisibility == ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport && mScrollRect.verticalScrollbar != null)
+            {
+                Debug.LogError("ScrollRect.verticalScrollbarVisibility cannot be set to AutoHideAndExpandViewport");
+            }
+            mIsVertList = (mArrangeType == ListItemArrangeType.TopToBottom || mArrangeType == ListItemArrangeType.BottomToTop);
+            mScrollRect.horizontal = !mIsVertList;
+            mScrollRect.vertical = mIsVertList;
+            SetScrollbarListener();
+            AdjustPivot(mViewPortRectTransform);
+            AdjustAnchor(mContainerTrans);
+            AdjustContainerPivot(mContainerTrans);
+            InitItemPool();
+            mOnGetItemByIndex = onGetItemByIndex;
+            mOnGetItemNameByIndex = onGetItemNameByIndex;
+            ResetListView();
+            SetListItemCount(itemTotalCount, true);
+        }
+
+
+
+        /*
+        This method will move the scrollrect content’s position to ( the positon of itemIndex-th item + offset ),
+        and in current version the itemIndex is from 0 to MaxInt, offset is from 0 to scrollrect viewport size. 
+        */
+        public void MovePanelToItemIndex(int itemIndex, float offset)
+        {
+            mScrollRect.StopMovement();
+            mCurSnapData.Clear();
+            if (itemIndex < 0 || mItemTotalCount == 0)
+                return;
+
+            if (mItemTotalCount > 0 && itemIndex >= mItemTotalCount)
+                itemIndex = mItemTotalCount - 1;
+
+            if (offset < 0)
+                offset = 0;
+
+            Vector3 pos = Vector3.zero;
+            float viewPortSize = ViewPortSize;
+            if (offset > viewPortSize)
+                offset = viewPortSize;
+
+
+            if (mArrangeType == ListItemArrangeType.TopToBottom)
+            {
+                float containerPos = mContainerTrans.localPosition.y;
+                if (containerPos < 0)
+                {
+                    containerPos = 0;
+                }
+                pos.y = -containerPos - offset;
+            }
+            else if (mArrangeType == ListItemArrangeType.BottomToTop)
+            {
+                float containerPos = mContainerTrans.localPosition.y;
+                if (containerPos > 0)
+                {
+                    containerPos = 0;
+                }
+                pos.y = -containerPos + offset;
+            }
+            else if (mArrangeType == ListItemArrangeType.LeftToRight)
+            {
+                float containerPos = mContainerTrans.localPosition.x;
+                if (containerPos > 0)
+                {
+                    containerPos = 0;
+                }
+                pos.x = -containerPos + offset;
+            }
+            else if (mArrangeType == ListItemArrangeType.RightToLeft)
+            {
+                float containerPos = mContainerTrans.localPosition.x;
+                if (containerPos < 0)
+                {
+                    containerPos = 0;
+                }
+                pos.x = -containerPos - offset;
+            }
+
+            RecycleAllItem();
+            LoopListViewItem2 newItem = GetNewItemByIndex(itemIndex);
+            if (newItem == null)
+            {
+                ClearAllTmpRecycledItem();
+                return;
+            }
+            if (mIsVertList)
+                pos.x = newItem.StartPosOffset;
+            else
+                pos.y = newItem.StartPosOffset;
+
+            newItem.CachedRectTransform.localPosition = pos;
+            if (mSupportScrollBar)
+            {
+                if (mIsVertList)
+                    SetItemSize(itemIndex, newItem.CachedRectTransform.rect.height, newItem.Padding);
+                else
+                    SetItemSize(itemIndex, newItem.CachedRectTransform.rect.width, newItem.Padding);
+            }
+
+            mItemList.Add(newItem);
+            UpdateContentSize();
+            UpdateListView(viewPortSize + 100, viewPortSize + 100, viewPortSize, viewPortSize);
+            AdjustPanelPos();
+            ClearAllTmpRecycledItem();
+        }
+
+        //update all visible items.
+        public void RefreshAllShownItem()
+        {
+            int count = mItemList.Count;
+            if (count == 0)
+            {
+                return;
+            }
+            RefreshAllShownItemWithFirstIndex(mItemList[0].ItemIndex);
+        }
+        public void RefreshAllShownItemWithFirstIndex(int firstItemIndex)
+        {
+            int count = mItemList.Count;
+            if (count == 0)
+            {
+                return;
+            }
+            LoopListViewItem2 firstItem = mItemList[0];
+            Vector3 pos = firstItem.CachedRectTransform.localPosition;
+            RecycleAllItem();
+            for (int i = 0; i < count; ++i)
+            {
+                int curIndex = firstItemIndex + i;
+                LoopListViewItem2 newItem = GetNewItemByIndex(curIndex);
+                if (newItem == null)
+                {
+                    break;
+                }
+                if (mIsVertList)
+                {
+                    pos.x = newItem.StartPosOffset;
+                }
+                else
+                {
+                    pos.y = newItem.StartPosOffset;
+                }
+                newItem.CachedRectTransform.localPosition = pos;
+                if (mSupportScrollBar)
+                {
+                    if (mIsVertList)
+                    {
+                        SetItemSize(curIndex, newItem.CachedRectTransform.rect.height, newItem.Padding);
+                    }
+                    else
+                    {
+                        SetItemSize(curIndex, newItem.CachedRectTransform.rect.width, newItem.Padding);
+                    }
+                }
+
+                mItemList.Add(newItem);
+            }
+            UpdateContentSize();
+            UpdateAllShownItemsPos();
+            ClearAllTmpRecycledItem();
+        }
+
+        /*
+        This method may use to set the item total count of the scrollview at runtime. 
+        If this parameter is set -1, then means there are infinite items,
+        and scrollbar would not be supported, and the ItemIndex can be from –MaxInt to +MaxInt. 
+        If this parameter is set a value >=0 , then the ItemIndex can only be from 0 to itemTotalCount -1.  
+        If resetPos is set false, then the scrollrect’s content position will not changed after this method finished.
+        */
+        /// <summary>
+        /// 用于在运行时设置滚动视图中的 Item 总数。
+        /// </summary>
+        /// <param name="itemCount"></param>
+        /// <param name="resetPos"></param>
+        /// <param name="needMoveToIndex"></param>
+        public void SetListItemCount(int itemCount, bool resetPos = true, bool needMoveToIndex = true)
+        {
+            if (itemCount == mItemTotalCount)
+                return;
+            mCurSnapData.Clear();
+            mItemTotalCount = itemCount;
+            if (mItemTotalCount < 0)
+                mSupportScrollBar = false;
+            if (mSupportScrollBar)
+                mItemPosMgr.SetItemMaxCount(mItemTotalCount);
+            else
+                mItemPosMgr.SetItemMaxCount(0);
+
+            if (mItemTotalCount == 0)
+            {
+                mCurReadyMaxItemIndex = 0;
+                mCurReadyMinItemIndex = 0;
+                mNeedCheckNextMaxItem = false;
+                mNeedCheckNextMinItem = false;
+                RecycleAllItem();
+                ClearAllTmpRecycledItem();
+                UpdateContentSize();
+                return;
+            }
+
+
+            mLeftSnapUpdateExtraCount = 1;
+            mNeedCheckNextMaxItem = true;
+            mNeedCheckNextMinItem = true;
+            if (resetPos)
+            {
+                MovePanelToItemIndex(0, 0);
+                return;
+            }
+            if (mItemList.Count == 0)
+            {
+                MovePanelToItemIndex(0, 0);
+                return;
+            }
+
+            //如果给定的数据总数量 大于最后一个显示 Item 的数据索引时 才更新。 虽然不知道为毛要这么设计 
+            int maxItemIndex = mItemTotalCount - 1;
+            int lastItemIndex = mItemList[mItemList.Count - 1].ItemIndex;
+            if (lastItemIndex <= maxItemIndex)
+            {
+                UpdateContentSize();
+                UpdateAllShownItemsPos();
+                return;
+            }
+            if (needMoveToIndex)
+            {
+                MovePanelToItemIndex(maxItemIndex, 0);
+            }
+        }
+
+        public void SetListItemCountNew(int itemCount)
+        {
+            if (itemCount == mItemTotalCount)
+                return;
+            mCurSnapData.Clear();
+            mItemTotalCount = itemCount;
+            if (mItemTotalCount < 0)
+                mSupportScrollBar = false;
+            if (mSupportScrollBar)
+                mItemPosMgr.SetItemMaxCount(mItemTotalCount);
+            else
+                mItemPosMgr.SetItemMaxCount(0);
+
+            if (mSupportScrollBar)
+            {
+                mItemPosMgr.Update(false);
+            }
+
+            mLeftSnapUpdateExtraCount = 1;
+            mNeedCheckNextMaxItem = true;
+            mNeedCheckNextMinItem = true;
+
+
+            //RecycleAllItem();
+            //ClearAllTmpRecycledItem();
+
+            //UpdateContentSize();
+            //UpdateAllShownItemsPos();
+        }
+
+
+        //强制刷新一次 因为当新增数据的时候调用MovePanelToItemIndex 位置不对 ， add by sunliwen
+        public void ForceUpdate()
+        {
+            Update();
+        }
+
+        void Update()
+        {
+            if (mNeedAdjustVec)
+            {
+                mNeedAdjustVec = false;
+                if (mIsVertList)
+                {
+                    if (mScrollRect.velocity.y * mAdjustedVec.y > 0)
+                    {
+                        //mScrollRect.velocity = mAdjustedVec;
+                        SetVelocity(mAdjustedVec);
+                    }
+                }
+                else
+                {
+                    if (mScrollRect.velocity.x * mAdjustedVec.x > 0)
+                    {
+                        //mScrollRect.velocity = mAdjustedVec;
+                        SetVelocity(mAdjustedVec);
+                    }
+                }
+            }
+
+
+
+            if (mSupportScrollBar)
+            {
+                mItemPosMgr.Update(false);
+            }
+            //UpdateSnapMove();
+            UpdateListView(mDistanceForRecycle0, mDistanceForRecycle1, mDistanceForNew0, mDistanceForNew1);
+            ClearAllTmpRecycledItem();
+            mLastFrameContainerPos = mContainerTrans.localPosition;
         }
 
 

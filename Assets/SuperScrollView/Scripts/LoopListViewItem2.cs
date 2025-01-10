@@ -149,7 +149,7 @@ namespace SuperScrollView
         }
 
         /// <summary>
-        /// 表示该项在列表中的索引。如果列表的 itemTotalCount 设置为 -1（无限项），则 ItemIndex 可以从 -MaxInt 到 +MaxInt。如果 itemTotalCount >= 0，则 ItemIndex 必须在 0 到 itemTotalCount - 1 之间。
+        /// 表示该项在列表中的数据索引。如果列表的 itemTotalCount 设置为 -1（无限项），则 ItemIndex 可以从 -MaxInt 到 +MaxInt。如果 itemTotalCount >= 0，则 ItemIndex 必须在 0 到 itemTotalCount - 1 之间。
         /// </summary>
         public int ItemIndex
         {
