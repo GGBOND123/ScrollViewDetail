@@ -20,7 +20,7 @@ namespace SuperScrollView
         // Use this for initialization
         void Start()
         {
-            mLoopListView.InitListView(DataSourceMgr.Get.TotalItemCount, OnGetItemByIndex);
+            mLoopListView.InitListView(1, OnGetItemByIndex);
 
             mSetCountButton = GameObject.Find("ButtonPanel/buttonGroup1/SetCountButton").GetComponent<Button>();
             mScrollToButton = GameObject.Find("ButtonPanel/buttonGroup2/ScrollToButton").GetComponent<Button>();
@@ -33,6 +33,14 @@ namespace SuperScrollView
             mSetCountButton.onClick.AddListener(OnSetItemCountBtnClicked);
             mBackButton = GameObject.Find("ButtonPanel/BackButton").GetComponent<Button>();
             mBackButton.onClick.AddListener(OnBackBtnClicked);
+
+
+
+            mLoopListView.SetListItemCount(2,false);
+
+            //mLoopListView.MovePanelToItemIndex(10000-1, 0);
+            //mLoopListView.ForceUpdate();
+    
         }
 
         void OnBackBtnClicked()
@@ -47,6 +55,12 @@ namespace SuperScrollView
             {
                 return null;
             }
+
+            //测试执行数量！
+            string s = "列表Index:";
+            if (index == 0)
+                s += "————————————————————";
+            Debug.LogError(s + index);
 
             ItemData itemData = DataSourceMgr.Get.GetItemDataByIndex(index);
             if(itemData == null)
@@ -68,12 +82,15 @@ namespace SuperScrollView
 
         void OnJumpBtnClicked()
         {
-            int itemIndex = 0;
-            if (int.TryParse(mScrollToInput.text, out itemIndex) == false)
-            {
-                return;
-            }
-            mLoopListView.MovePanelToItemIndex(itemIndex, 0);
+            //int itemIndex = 0;
+            //if (int.TryParse(mScrollToInput.text, out itemIndex) == false)
+            //{
+            //    return;
+            //}
+            //mLoopListView.MovePanelToItemIndex(itemIndex, 0);
+            mLoopListView.SetListItemCount(20, false);
+            //mLoopListView.MovePanelToItemIndex(0, 0);
+            mLoopListView.MovePanelToItemIndex(20 - 1, 0);
         }
 
         void OnAddItemBtnClicked()
@@ -97,16 +114,18 @@ namespace SuperScrollView
 
         void OnSetItemCountBtnClicked()
         {
-            int count = 0;
-            if (int.TryParse(mSetCountInput.text, out count) == false)
-            {
-                return;
-            }
-            if (count < 0 || count > DataSourceMgr.Get.TotalItemCount)
-            {
-                return;
-            }
-            mLoopListView.SetListItemCount(count, false,false);
+            //int count = 0;
+            //if (int.TryParse(mSetCountInput.text, out count) == false)
+            //{
+            //    return;
+            //}
+            //if (count < 0 || count > DataSourceMgr.Get.TotalItemCount)
+            //{
+            //    return;
+            //}
+            mLoopListView.SetListItemCount(8,false);
+            //mLoopListView.MovePanelToItemIndex(0, 0);
+            mLoopListView.MovePanelToItemIndex(8 - 1, 0);
             //mLoopListView.ForceUpdate();
         }
 

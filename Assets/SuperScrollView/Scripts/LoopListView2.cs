@@ -236,11 +236,7 @@ namespace SuperScrollView
         bool mSupportScrollBar = true;
         [SerializeField]
         bool mItemInterruptAnim = false;
-        /// <summary>
-        /// 启用此选项后，当滚动结束时，组件会自动将某个 Item 吸附（Snap） 到预设的位置，提升交互体验。常用于居中或边界吸附。
-        /// </summary>
-        [SerializeField]
-        bool mItemSnapEnable = false;
+
 
         /// <summary>
         /// 该属性定义 Item 自身的吸附枢轴点，采用 归一化比例坐标：(0,0) 表示 Item 的左下角。(1,1) 表示 Item 的右上角。(0.5, 0.5) 表示吸附在 Item 的中心。
@@ -293,11 +289,11 @@ namespace SuperScrollView
         Vector3[] mViewPortRectLocalCorners = new Vector3[4];
 
         /// <summary>
-        /// UpdateListView()中，mItemList数组尾部增加时，上一次While循环中的增加的尾部数据Index
+        /// UpdateListView()中，mItemList数组尾部增加时，上一次While循环中的增加的尾部数据Index，最小的数据Index。
         /// </summary>
         int mCurReadyMinItemIndex = 0;
         /// <summary>
-        /// UpdateListView()中，mItemList数组头部增加时，上一次While循环中的增加的头部数据Index
+        /// UpdateListView()中，mItemList数组头部增加时，上一次While循环中的增加的头部数据Index，最大的数据Index。
         /// </summary>
         int mCurReadyMaxItemIndex = 0;
         
@@ -395,7 +391,6 @@ namespace SuperScrollView
         int mLeftSnapUpdateExtraCount = 1;
 
         ClickEventListener mScrollBarClickEventListener = null;
-        SnapData mCurSnapData = new SnapData();
 
         /// <summary>
         /// Update中，当前帧Content的localPosition  和 上一帧Content的localPosition 的差值。
@@ -441,11 +436,6 @@ namespace SuperScrollView
             }
         }
 
-        public bool ItemSnapEnable
-        {
-            get {return mItemSnapEnable;}
-            set { mItemSnapEnable = value; }
-        }
 
         public bool SupportScrollBar
         {
@@ -532,19 +522,16 @@ namespace SuperScrollView
 
         void OnPointerDownInScrollBar(GameObject obj)
         {
-            mCurSnapData.Clear();
         }
 
         void OnPointerUpInScrollBar(GameObject obj)
         {
-            ForceSnapUpdateCheck();
         }
 
         public void ResetListView()
         {
             mViewPortRectTransform.GetLocalCorners(mViewPortRectLocalCorners);
             mContainerTrans.localPosition = Vector3.zero;
-            ForceSnapUpdateCheck();
         }
 
 
@@ -746,10 +733,8 @@ namespace SuperScrollView
             ClearAllTmpRecycledItem();
         }
 
-        //snap move will finish at once.
         public void FinishSnapImmediately()
         {
-            UpdateSnapMove(true);
         }
 
         /// <summary>
@@ -1053,7 +1038,6 @@ namespace SuperScrollView
             }
             mIsDraging = true;
             CacheDragPointerEventData(eventData);
-            mCurSnapData.Clear();
             if(mOnBeginDragAction != null)
             {
                 mOnBeginDragAction(eventData);
@@ -1074,7 +1058,6 @@ namespace SuperScrollView
             {
                 mOnEndDragAction(eventData);
             }
-            ForceSnapUpdateCheck();
         }
 
         public virtual void OnDrag(PointerEventData eventData)
@@ -1348,346 +1331,19 @@ namespace SuperScrollView
         private bool _isOccurError = false;
 
 
-        //update snap move. if immediate is set true, then the snap move will finish at once.
-        void UpdateSnapMove(bool immediate = false)
-        {
-            if (mItemSnapEnable == false)
-            {
-                return;
-            }
-            if (mIsVertList)
-            {
-                UpdateSnapVertical(immediate);
-            }
-            else
-            {
-                UpdateSnapHorizontal(immediate);
-            }
-        }
-
-
-
-        public void UpdateAllShownItemSnapData()
-        {
-            if (mItemSnapEnable == false)
-            {
-                return;
-            }
-            int count = mItemList.Count;
-            if (count == 0)
-            {
-                return;
-            }
-            Vector3 pos = mContainerTrans.localPosition;
-            LoopListViewItem2 tViewItem0 = mItemList[0];
-            tViewItem0.CachedRectTransform.GetWorldCorners(mItemWorldCorners);
-            float start = 0;
-            float end = 0;
-            float itemSnapCenter = 0;
-            float snapCenter = 0;
-            if (mArrangeType == ListItemArrangeType.TopToBottom)
-            {
-                snapCenter = -(1 - mViewPortSnapPivot.y) * mViewPortRectTransform.rect.height;
-                Vector3 topPos1 = mViewPortRectTransform.InverseTransformPoint(mItemWorldCorners[1]);
-                start = topPos1.y;
-                end = start - tViewItem0.ItemSizeWithPadding;
-                itemSnapCenter = start - tViewItem0.ItemSize * (1 - mItemSnapPivot.y);
-                for (int i = 0; i < count; ++i)
-                {
-                    mItemList[i].DistanceWithViewPortSnapCenter = snapCenter - itemSnapCenter;
-                    if ((i + 1) < count)
-                    {
-                        start = end;
-                        end = end - mItemList[i + 1].ItemSizeWithPadding;
-                        itemSnapCenter = start - mItemList[i + 1].ItemSize * (1 - mItemSnapPivot.y);
-                    }
-                }
-            }
-            else if (mArrangeType == ListItemArrangeType.BottomToTop)
-            {
-                snapCenter = mViewPortSnapPivot.y * mViewPortRectTransform.rect.height;
-                Vector3 bottomPos1 = mViewPortRectTransform.InverseTransformPoint(mItemWorldCorners[0]);
-                start = bottomPos1.y;
-                end = start + tViewItem0.ItemSizeWithPadding;
-                itemSnapCenter = start + tViewItem0.ItemSize * mItemSnapPivot.y;
-                for (int i = 0; i < count; ++i)
-                {
-                    mItemList[i].DistanceWithViewPortSnapCenter = snapCenter - itemSnapCenter;
-                    if ((i + 1) < count)
-                    {
-                        start = end;
-                        end = end + mItemList[i + 1].ItemSizeWithPadding;
-                        itemSnapCenter = start + mItemList[i + 1].ItemSize * mItemSnapPivot.y;
-                    }
-                }
-            }
-            else if (mArrangeType == ListItemArrangeType.RightToLeft)
-            {
-                snapCenter = -(1 - mViewPortSnapPivot.x) * mViewPortRectTransform.rect.width;
-                Vector3 rightPos1 = mViewPortRectTransform.InverseTransformPoint(mItemWorldCorners[2]);
-                start = rightPos1.x;
-                end = start - tViewItem0.ItemSizeWithPadding;
-                itemSnapCenter = start - tViewItem0.ItemSize * (1 - mItemSnapPivot.x);
-                for (int i = 0; i < count; ++i)
-                {
-                    mItemList[i].DistanceWithViewPortSnapCenter = snapCenter - itemSnapCenter;
-                    if ((i + 1) < count)
-                    {
-                        start = end;
-                        end = end - mItemList[i + 1].ItemSizeWithPadding;
-                        itemSnapCenter = start - mItemList[i + 1].ItemSize * (1 - mItemSnapPivot.x);
-                    }
-                }
-            }
-            else if (mArrangeType == ListItemArrangeType.LeftToRight)
-            {
-                snapCenter = mViewPortSnapPivot.x * mViewPortRectTransform.rect.width;
-                Vector3 leftPos1 = mViewPortRectTransform.InverseTransformPoint(mItemWorldCorners[1]);
-                start = leftPos1.x;
-                end = start + tViewItem0.ItemSizeWithPadding;
-                itemSnapCenter = start + tViewItem0.ItemSize * mItemSnapPivot.x;
-                for (int i = 0; i < count; ++i)
-                {
-                    mItemList[i].DistanceWithViewPortSnapCenter = snapCenter - itemSnapCenter;
-                    if ((i + 1) < count)
-                    {
-                        start = end;
-                        end = end + mItemList[i + 1].ItemSizeWithPadding;
-                        itemSnapCenter = start + mItemList[i + 1].ItemSize * mItemSnapPivot.x;
-                    }
-                }
-            }
-        }
-
-
-
-        void UpdateSnapVertical(bool immediate = false)
-        {
-            if(mItemSnapEnable == false)
-            {
-                return;
-            }
-            int count = mItemList.Count;
-            if (count == 0)
-            {
-                return;
-            }
-            Vector3 pos = mContainerTrans.localPosition;
-            bool needCheck = (pos.y != mLastSnapCheckPos.y);
-            mLastSnapCheckPos = pos;
-            if (!needCheck)
-            {
-                if (mLeftSnapUpdateExtraCount > 0)
-                {
-                    mLeftSnapUpdateExtraCount--;
-                    needCheck = true;
-                }
-            }
-            if (needCheck)
-            {
-                LoopListViewItem2 tViewItem0 = mItemList[0];
-                tViewItem0.CachedRectTransform.GetWorldCorners(mItemWorldCorners);
-                int curIndex = -1;
-                float start = 0;
-                float end = 0;
-                float itemSnapCenter = 0;
-                float curMinDist = float.MaxValue;
-                float curDist = 0;
-                float curDistAbs = 0;
-                float snapCenter = 0; 
-                if (mArrangeType == ListItemArrangeType.TopToBottom)
-                {
-                    snapCenter = -(1 - mViewPortSnapPivot.y) * mViewPortRectTransform.rect.height;
-                    Vector3 topPos1 = mViewPortRectTransform.InverseTransformPoint(mItemWorldCorners[1]);
-                    start = topPos1.y;
-                    end = start - tViewItem0.ItemSizeWithPadding;
-                    itemSnapCenter = start - tViewItem0.ItemSize * (1-mItemSnapPivot.y);
-                    for (int i = 0; i < count; ++i)
-                    {
-                        curDist = snapCenter - itemSnapCenter;
-                        curDistAbs = Mathf.Abs(curDist);
-                        if (curDistAbs < curMinDist)
-                        {
-                            curMinDist = curDistAbs;
-                            curIndex = i;
-                        }
-                        else
-                        {
-                            break;
-                        }
-                        
-                        if ((i + 1) < count)
-                        {
-                            start = end;
-                            end = end - mItemList[i + 1].ItemSizeWithPadding;
-                            itemSnapCenter = start - mItemList[i + 1].ItemSize * (1 - mItemSnapPivot.y);
-                        }
-                    }
-                }
-                else if(mArrangeType == ListItemArrangeType.BottomToTop)
-                {
-                    snapCenter = mViewPortSnapPivot.y * mViewPortRectTransform.rect.height;
-                    Vector3 bottomPos1 = mViewPortRectTransform.InverseTransformPoint(mItemWorldCorners[0]);
-                    start = bottomPos1.y;
-                    end = start + tViewItem0.ItemSizeWithPadding;
-                    itemSnapCenter = start + tViewItem0.ItemSize * mItemSnapPivot.y;
-                    for (int i = 0; i < count; ++i)
-                    {
-                        curDist = snapCenter - itemSnapCenter;
-                        curDistAbs = Mathf.Abs(curDist);
-                        if (curDistAbs < curMinDist)
-                        {
-                            curMinDist = curDistAbs;
-                            curIndex = i;
-                        }
-                        else
-                        {
-                            break;
-                        }
-
-                        if ((i + 1) < count)
-                        {
-                            start = end;
-                            end = end + mItemList[i + 1].ItemSizeWithPadding;
-                            itemSnapCenter = start + mItemList[i + 1].ItemSize *  mItemSnapPivot.y;
-                        }
-                    }
-                }
-
-                if (curIndex >= 0)
-                {
-                    int oldNearestItemIndex = mCurSnapNearestItemIndex;
-                    mCurSnapNearestItemIndex = mItemList[curIndex].ItemIndex;
-                    if (mItemList[curIndex].ItemIndex != oldNearestItemIndex)
-                    {
-                        if (mOnSnapNearestChanged != null)
-                        {
-                            mOnSnapNearestChanged(this,mItemList[curIndex]);
-                        }
-                    }
-                }
-                else
-                {
-                    mCurSnapNearestItemIndex = -1;
-                }
-            }
-            if (CanSnap() == false)
-            {
-                ClearSnapData();
-                return;
-            }
-            float v = Mathf.Abs(mScrollRect.velocity.y);
-            UpdateCurSnapData();
-            if (mCurSnapData.mSnapStatus != SnapStatus.SnapMoving)
-            {
-                return;
-            }
-            if (v > 0)
-            {
-                mScrollRect.StopMovement();
-            }
-            float old = mCurSnapData.mCurSnapVal;
-            mCurSnapData.mCurSnapVal = Mathf.SmoothDamp(mCurSnapData.mCurSnapVal, mCurSnapData.mTargetSnapVal, ref mSmoothDumpVel, mSmoothDumpRate);
-            float dt = mCurSnapData.mCurSnapVal - old;
-                
-            if (immediate || Mathf.Abs(mCurSnapData.mTargetSnapVal - mCurSnapData.mCurSnapVal) < mSnapFinishThreshold)
-            {
-                pos.y = pos.y + mCurSnapData.mTargetSnapVal - old;
-                mCurSnapData.mSnapStatus = SnapStatus.SnapMoveFinish;
-                if (mOnSnapItemFinished != null)
-                {
-                    LoopListViewItem2 targetItem = GetShownItemByItemIndex(mCurSnapNearestItemIndex);
-                    if(targetItem != null)
-                    {
-                        mOnSnapItemFinished(this,targetItem);
-                    }
-                }
-            }
-            else
-            {
-                pos.y = pos.y + dt;
-            }
-
-            if (mArrangeType == ListItemArrangeType.TopToBottom)
-            {
-                float maxY = mViewPortRectLocalCorners[0].y + mContainerTrans.rect.height;
-                pos.y = Mathf.Clamp(pos.y, 0, maxY);
-                //mContainerTrans.localPosition = pos;
-                SetContainerLocalPosY(pos.y);
-            }
-            else if (mArrangeType == ListItemArrangeType.BottomToTop)
-            {
-                float minY = mViewPortRectLocalCorners[1].y - mContainerTrans.rect.height;
-                pos.y = Mathf.Clamp(pos.y, minY, 0);
-                //mContainerTrans.localPosition = pos;
-                SetContainerLocalPosY(pos.y);
-            }
-
-        }
-
 
         void UpdateCurSnapData()
         {
-            int count = mItemList.Count;
-            if (count == 0)
-            {
-                mCurSnapData.Clear();
-                return;
-            }
-
-            if (mCurSnapData.mSnapStatus == SnapStatus.SnapMoveFinish)
-            {
-                if (mCurSnapData.mSnapTargetIndex == mCurSnapNearestItemIndex)
-                {
-                    return;
-                }
-                mCurSnapData.mSnapStatus = SnapStatus.NoTargetSet;
-            }
-            if (mCurSnapData.mSnapStatus == SnapStatus.SnapMoving)
-            {
-                if ( (mCurSnapData.mSnapTargetIndex == mCurSnapNearestItemIndex) || mCurSnapData.mIsForceSnapTo)
-                {
-                    return;
-                }
-                mCurSnapData.mSnapStatus = SnapStatus.NoTargetSet;
-            }
-            if (mCurSnapData.mSnapStatus == SnapStatus.NoTargetSet)
-            {
-                LoopListViewItem2 nearestItem = GetShownItemByItemIndex(mCurSnapNearestItemIndex);
-                if (nearestItem == null)
-                {
-                    return;
-                }
-                mCurSnapData.mSnapTargetIndex = mCurSnapNearestItemIndex;
-                mCurSnapData.mSnapStatus = SnapStatus.TargetHasSet;
-                mCurSnapData.mIsForceSnapTo = false;
-            }
-            if (mCurSnapData.mSnapStatus == SnapStatus.TargetHasSet)
-            {
-                LoopListViewItem2 targetItem = GetShownItemByItemIndex(mCurSnapData.mSnapTargetIndex);
-                if (targetItem == null)
-                {
-                    mCurSnapData.Clear();
-                    return;
-                }
-                UpdateAllShownItemSnapData();
-                mCurSnapData.mTargetSnapVal = targetItem.DistanceWithViewPortSnapCenter;
-                mCurSnapData.mCurSnapVal = 0;
-                mCurSnapData.mSnapStatus = SnapStatus.SnapMoving;
-            }
+          
 
         }
         //Clear current snap target and then the LoopScrollView2 will auto snap to the CurSnapNearestItemIndex.
         public void ClearSnapData()
         {
-            mCurSnapData.Clear();
         }
 
         public void SetSnapTargetItemIndex(int itemIndex)
         {
-            mCurSnapData.mSnapTargetIndex = itemIndex;
-            mCurSnapData.mSnapStatus = SnapStatus.TargetHasSet;
-            mCurSnapData.mIsForceSnapTo = true;
         }
 
         //Get the nearest item index with the viewport snap point.
@@ -1696,176 +1352,8 @@ namespace SuperScrollView
             get{ return mCurSnapNearestItemIndex; }
         }
 
-        public void ForceSnapUpdateCheck()
-        {
-            if(mLeftSnapUpdateExtraCount <= 0)
-            {
-                mLeftSnapUpdateExtraCount = 1;
-            }
-        }
 
-        void UpdateSnapHorizontal(bool immediate = false)
-        {
-            if (mItemSnapEnable == false)
-            {
-                return;
-            }
-            int count = mItemList.Count;
-            if (count == 0)
-            {
-                return;
-            }
-            Vector3 pos = mContainerTrans.localPosition;
-            bool needCheck = (pos.x != mLastSnapCheckPos.x);
-            mLastSnapCheckPos = pos;
-            if (!needCheck)
-            {
-                if(mLeftSnapUpdateExtraCount > 0)
-                {
-                    mLeftSnapUpdateExtraCount--;
-                    needCheck = true;
-                }
-            }
-            if (needCheck)
-            {
-                LoopListViewItem2 tViewItem0 = mItemList[0];
-                tViewItem0.CachedRectTransform.GetWorldCorners(mItemWorldCorners);
-                int curIndex = -1;
-                float start = 0;
-                float end = 0;
-                float itemSnapCenter = 0;
-                float curMinDist = float.MaxValue;
-                float curDist = 0;
-                float curDistAbs = 0;
-                float snapCenter = 0;
-                if (mArrangeType == ListItemArrangeType.RightToLeft)
-                {
-                    snapCenter = -(1 - mViewPortSnapPivot.x) * mViewPortRectTransform.rect.width;
-                    Vector3 rightPos1 = mViewPortRectTransform.InverseTransformPoint(mItemWorldCorners[2]);
-                    start = rightPos1.x;
-                    end = start - tViewItem0.ItemSizeWithPadding;
-                    itemSnapCenter = start - tViewItem0.ItemSize * (1 - mItemSnapPivot.x);
-                    for (int i = 0; i < count; ++i)
-                    {
-                        curDist = snapCenter - itemSnapCenter;
-                        curDistAbs = Mathf.Abs(curDist);
-                        if (curDistAbs < curMinDist)
-                        {
-                            curMinDist = curDistAbs;
-                            curIndex = i;
-                        }
-                        else
-                        {
-                            break;
-                        }
-
-                        if ((i + 1) < count)
-                        {
-                            start = end;
-                            end = end - mItemList[i + 1].ItemSizeWithPadding;
-                            itemSnapCenter = start - mItemList[i + 1].ItemSize * (1 - mItemSnapPivot.x);
-                        }
-                    }
-                }
-                else if (mArrangeType == ListItemArrangeType.LeftToRight)
-                {
-                    snapCenter = mViewPortSnapPivot.x * mViewPortRectTransform.rect.width;
-                    Vector3 leftPos1 = mViewPortRectTransform.InverseTransformPoint(mItemWorldCorners[1]);
-                    start = leftPos1.x;
-                    end = start + tViewItem0.ItemSizeWithPadding;
-                    itemSnapCenter = start + tViewItem0.ItemSize * mItemSnapPivot.x;
-                    for (int i = 0; i < count; ++i)
-                    {
-                        curDist = snapCenter - itemSnapCenter;
-                        curDistAbs = Mathf.Abs(curDist);
-                        if (curDistAbs < curMinDist)
-                        {
-                            curMinDist = curDistAbs;
-                            curIndex = i;
-                        }
-                        else
-                        {
-                            break;
-                        }
-
-                        if ((i + 1) < count)
-                        {
-                            start = end;
-                            end = end + mItemList[i + 1].ItemSizeWithPadding;
-                            itemSnapCenter = start + mItemList[i + 1].ItemSize * mItemSnapPivot.x;
-                        }
-                    }
-                }
-
-
-                if (curIndex >= 0)
-                {
-                    int oldNearestItemIndex = mCurSnapNearestItemIndex;
-                    mCurSnapNearestItemIndex = mItemList[curIndex].ItemIndex;
-                    if (mItemList[curIndex].ItemIndex != oldNearestItemIndex)
-                    {
-                        if (mOnSnapNearestChanged != null)
-                        {
-                            mOnSnapNearestChanged(this, mItemList[curIndex]);
-                        }
-                    }
-                }
-                else
-                {
-                    mCurSnapNearestItemIndex = -1;
-                }
-            }
-            if (CanSnap() == false)
-            {
-                ClearSnapData();
-                return;
-            }
-            float v = Mathf.Abs(mScrollRect.velocity.x);
-            UpdateCurSnapData();
-            if(mCurSnapData.mSnapStatus != SnapStatus.SnapMoving)
-            {
-                return;
-            }
-            if (v > 0)
-            {
-                mScrollRect.StopMovement();
-            }
-            float old = mCurSnapData.mCurSnapVal;
-            mCurSnapData.mCurSnapVal = Mathf.SmoothDamp(mCurSnapData.mCurSnapVal, mCurSnapData.mTargetSnapVal, ref mSmoothDumpVel, mSmoothDumpRate);
-            float dt = mCurSnapData.mCurSnapVal - old;
-
-            if (immediate || Mathf.Abs(mCurSnapData.mTargetSnapVal - mCurSnapData.mCurSnapVal) < mSnapFinishThreshold)
-            {
-                pos.x = pos.x + mCurSnapData.mTargetSnapVal - old;
-                mCurSnapData.mSnapStatus = SnapStatus.SnapMoveFinish;
-                if (mOnSnapItemFinished != null)
-                {
-                    LoopListViewItem2 targetItem = GetShownItemByItemIndex(mCurSnapNearestItemIndex);
-                    if (targetItem != null)
-                    {
-                        mOnSnapItemFinished(this, targetItem);
-                    }
-                }
-            }
-            else
-            {
-                pos.x = pos.x + dt;
-            }
-                
-            if (mArrangeType == ListItemArrangeType.LeftToRight)
-            {
-                float minX = mViewPortRectLocalCorners[2].x - mContainerTrans.rect.width;
-                pos.x = Mathf.Clamp(pos.x, minX, 0);
-                mContainerTrans.localPosition = pos;
-            }
-            else if (mArrangeType == ListItemArrangeType.RightToLeft)
-            {
-                float maxX = mViewPortRectLocalCorners[1].x + mContainerTrans.rect.width;
-                pos.x = Mathf.Clamp(pos.x, 0, maxX);
-                mContainerTrans.localPosition = pos;
-            }
-        }
-
+       
         bool CanSnap()
         {
             if (mIsDraging)
@@ -2082,7 +1570,7 @@ namespace SuperScrollView
 
 
 
-                //该Item在Viewport下方 distanceForNew1 范围内
+                //该Item在Viewport下方 distanceForNew1 范围内就显示
                 if (mViewPortRectLocalCorners[0].y - downPos1.y < distanceForNew1)
                 {
                     //如果切换数据位置，最后一个显示的数据Index比mCurReadyMaxItemIndex大，更新mCurReadyMaxItemIndex值
@@ -2928,8 +2416,18 @@ namespace SuperScrollView
         }
 
 
-
-
+        void SetAnchoredPositionX(RectTransform rtf, float x)
+        {
+            Vector3 pos = rtf.anchoredPosition3D;
+            pos.x = x;
+            rtf.anchoredPosition3D = pos;
+        }
+        void SetAnchoredPositionY(RectTransform rtf, float y)
+        {
+            Vector3 pos = rtf.anchoredPosition3D;
+            pos.y = y;
+            rtf.anchoredPosition3D = pos;
+        }
 
         /*
         InitListView method is to initiate the LoopListView2 component. There are 3 parameters:
@@ -2966,7 +2464,6 @@ namespace SuperScrollView
             {
                 Debug.LogError("mDistanceForRecycle1 should be bigger than mDistanceForNew1");
             }
-            mCurSnapData.Clear();
             mItemPosMgr = new ItemPosMgr(mItemDefaultWithPaddingSize);
             mScrollRectTransform = mScrollRect.GetComponent<RectTransform>();
             mContainerTrans = mScrollRect.content;
@@ -2994,7 +2491,7 @@ namespace SuperScrollView
             mOnGetItemByIndex = onGetItemByIndex;
             mOnGetItemNameByIndex = onGetItemNameByIndex;
             ResetListView();
-            SetListItemCount(itemTotalCount, true);
+            //SetListItemCount(itemTotalCount, true);
         }
 
 
@@ -3006,7 +2503,6 @@ namespace SuperScrollView
         public void MovePanelToItemIndex(int itemIndex, float offset)
         {
             mScrollRect.StopMovement();
-            mCurSnapData.Clear();
             if (itemIndex < 0 || mItemTotalCount == 0)
                 return;
 
@@ -3081,8 +2577,9 @@ namespace SuperScrollView
             }
 
             mItemList.Add(newItem);
-            UpdateContentSize();
+  
             UpdateListView(viewPortSize + 100, viewPortSize + 100, viewPortSize, viewPortSize);
+            UpdateContentSize();
             AdjustPanelPos();
             ClearAllTmpRecycledItem();
         }
@@ -3156,11 +2653,10 @@ namespace SuperScrollView
         /// <param name="itemCount"></param>
         /// <param name="resetPos"></param>
         /// <param name="needMoveToIndex"></param>
-        public void SetListItemCount(int itemCount, bool resetPos = true, bool needMoveToIndex = true)
+        public void SetListItemCount(int itemCount, bool resetPos = true)
         {
             if (itemCount == mItemTotalCount)
                 return;
-            mCurSnapData.Clear();
             mItemTotalCount = itemCount;
             if (mItemTotalCount < 0)
                 mSupportScrollBar = false;
@@ -3178,9 +2674,16 @@ namespace SuperScrollView
                 RecycleAllItem();
                 ClearAllTmpRecycledItem();
                 UpdateContentSize();
+                if (IsVertList)
+                {
+                    SetAnchoredPositionY(mContainerTrans, 0f);
+                }
+                else
+                {
+                    SetAnchoredPositionX(mContainerTrans, 0f);
+                }
                 return;
             }
-
 
             mLeftSnapUpdateExtraCount = 1;
             mNeedCheckNextMaxItem = true;
@@ -3205,33 +2708,29 @@ namespace SuperScrollView
                 UpdateAllShownItemsPos();
                 return;
             }
-            if (needMoveToIndex)
-            {
-                MovePanelToItemIndex(maxItemIndex, 0);
-            }
+            MovePanelToItemIndex(maxItemIndex, 0);
         }
 
         public void SetListItemCountNew(int itemCount)
         {
-            if (itemCount == mItemTotalCount)
-                return;
-            mCurSnapData.Clear();
-            mItemTotalCount = itemCount;
-            if (mItemTotalCount < 0)
-                mSupportScrollBar = false;
-            if (mSupportScrollBar)
-                mItemPosMgr.SetItemMaxCount(mItemTotalCount);
-            else
-                mItemPosMgr.SetItemMaxCount(0);
+            //if (itemCount == mItemTotalCount)
+            //    return;
+            //mItemTotalCount = itemCount;
+            //if (mItemTotalCount < 0)
+            //    mSupportScrollBar = false;
+            //if (mSupportScrollBar)
+            //    mItemPosMgr.SetItemMaxCount(mItemTotalCount);
+            //else
+            //    mItemPosMgr.SetItemMaxCount(0);
 
-            if (mSupportScrollBar)
-            {
-                mItemPosMgr.Update(false);
-            }
+            //if (mSupportScrollBar)
+            //{
+            //    mItemPosMgr.Update(false);
+            //}
 
-            mLeftSnapUpdateExtraCount = 1;
-            mNeedCheckNextMaxItem = true;
-            mNeedCheckNextMinItem = true;
+            //mLeftSnapUpdateExtraCount = 1;
+            //mNeedCheckNextMaxItem = true;
+            //mNeedCheckNextMinItem = true;
 
 
             //RecycleAllItem();
@@ -3277,7 +2776,6 @@ namespace SuperScrollView
             {
                 mItemPosMgr.Update(false);
             }
-            //UpdateSnapMove();
             UpdateListView(mDistanceForRecycle0, mDistanceForRecycle1, mDistanceForNew0, mDistanceForNew1);
             ClearAllTmpRecycledItem();
             mLastFrameContainerPos = mContainerTrans.localPosition;
@@ -3300,8 +2798,9 @@ namespace SuperScrollView
             mContainerTrans.localPosition = srcPos;
         }
 
-        private void SetVelocity(Vector2 velocity)
+        public void SetVelocity(Vector2 velocity)
         {
+            //Debug.LogError($"设置的速度为:{velocity.y}");
             var srcVelocity = mScrollRect.velocity;
             //Debug.LogError($"#LoopList# SetContainerLocalPosY srcVelocity.y:{srcVelocity.y}, newVelocity:{velocity.y}");
             if (Math.Abs(velocity.y - srcVelocity.y) > 5000)

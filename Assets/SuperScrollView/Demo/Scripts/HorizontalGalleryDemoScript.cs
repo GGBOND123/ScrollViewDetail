@@ -69,7 +69,7 @@ namespace SuperScrollView
 
         void LateUpdate()
         {
-            mLoopListView.UpdateAllShownItemSnapData();
+            //mLoopListView.UpdateAllShownItemSnapData();
             int count = mLoopListView.ShownItemCount;
             for (int i = 0; i < count; ++i)
             {
