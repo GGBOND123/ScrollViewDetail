@@ -94,7 +94,7 @@ namespace SuperScrollView
         }
 
         /// <summary>
-        /// 设置第index（数据层上的）个Item的高度，并且更新标记为脏的index值。返回该Item需要移动的pos值
+        /// 设置第index（数据层上的）个Item的高度，并且更新标记为脏的index值。更新mGroupSize的大小
         /// </summary>
         /// <param name="index"></param>
         /// <param name="size"></param>
@@ -303,12 +303,14 @@ namespace SuperScrollView
 
         }
 
+        //一般Item有高度变化时调用
         public void SetItemSize(int itemIndex, float size)
         {
             int groupIndex = itemIndex / mItemMaxCountPerGroup;
             int indexInGroup = itemIndex % mItemMaxCountPerGroup;
             ItemSizeGroup tGroup = mItemSizeGroupList[groupIndex];
             float changedSize = tGroup.SetItemSize(indexInGroup, size);
+            //当前group大小变了，后续group位置应该都要变，标记当前group为脏
             if (changedSize != 0f)
             {
                 if (groupIndex < mDirtyBeginIndex)
