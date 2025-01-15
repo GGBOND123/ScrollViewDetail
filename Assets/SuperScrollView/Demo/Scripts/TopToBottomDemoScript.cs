@@ -20,7 +20,7 @@ namespace SuperScrollView
         // Use this for initialization
         void Start()
         {
-            mLoopListView.InitListView(DataSourceMgr.Get.TotalItemCount, OnGetItemByIndex);
+            mLoopListView.InitListView(30, OnGetItemByIndex);
 
             mSetCountButton = GameObject.Find("ButtonPanel/buttonGroup1/SetCountButton").GetComponent<Button>();
             mScrollToButton = GameObject.Find("ButtonPanel/buttonGroup2/ScrollToButton").GetComponent<Button>();
@@ -33,6 +33,14 @@ namespace SuperScrollView
             mSetCountButton.onClick.AddListener(OnSetItemCountBtnClicked);
             mBackButton = GameObject.Find("ButtonPanel/BackButton").GetComponent<Button>();
             mBackButton.onClick.AddListener(OnBackBtnClicked);
+
+
+
+            mLoopListView.SetListItemCountNew(30);
+
+            //mLoopListView.MovePanelToItemIndex(10000-1, 0);
+            //mLoopListView.ForceUpdate();
+    
         }
 
         void OnBackBtnClicked()
@@ -73,7 +81,11 @@ namespace SuperScrollView
             {
                 return;
             }
-            mLoopListView.MovePanelToItemIndex(itemIndex, 0);
+            //mLoopListView.MovePanelToItemIndex(itemIndex, 0);
+            mLoopListView.SetListItemCountNew(itemIndex);
+            //mLoopListView.RefreshAllShownItemNew();
+
+            mLoopListView.MovePanelToItemIndex(itemIndex - 1, 0);
         }
 
         void OnAddItemBtnClicked()
@@ -102,11 +114,14 @@ namespace SuperScrollView
             {
                 return;
             }
-            if (count < 0 || count > DataSourceMgr.Get.TotalItemCount)
-            {
-                return;
-            }
-            mLoopListView.SetListItemCount(count, false,false);
+            //if (count < 0 || count > DataSourceMgr.Get.TotalItemCount)
+            //{
+            //    return;
+            //}
+            mLoopListView.SetListItemCountNew(count);
+            //mLoopListView.RefreshAllShownItemNew();
+
+            mLoopListView.MovePanelToItemIndex(count - 1, 0);
             //mLoopListView.ForceUpdate();
         }
 

@@ -2669,11 +2669,13 @@ namespace SuperScrollView
                 LoopListViewItem2 firstItem = mItemList[0];
                 LoopListViewItem2 lastItem = mItemList[mItemList.Count - 1];
                 float viewMaxY = GetContentPanelSize();
+                //显示列表中第一个Item没有在顶部位置
                 if (firstItem.TopY > 0 || (firstItem.ItemIndex == mCurReadyMinItemIndex && firstItem.TopY != 0))
                 {
                     UpdateAllShownItemsPos();
                     return;
                 }
+                //显示列表中最后一个Item没有在底部位置
                 if ((-lastItem.BottomY) > viewMaxY || (lastItem.ItemIndex == mCurReadyMaxItemIndex && (-lastItem.BottomY) != viewMaxY))
                 {
                     UpdateAllShownItemsPos();
@@ -3211,6 +3213,7 @@ namespace SuperScrollView
             }
         }
 
+
         public void SetListItemCountNew(int itemCount)
         {
             if (itemCount == mItemTotalCount)
@@ -3224,21 +3227,31 @@ namespace SuperScrollView
             else
                 mItemPosMgr.SetItemMaxCount(0);
 
-            if (mSupportScrollBar)
+            if (mItemTotalCount == 0)
             {
-                mItemPosMgr.Update(false);
+                mCurReadyMaxItemIndex = 0;
+                mCurReadyMinItemIndex = 0;
+                mNeedCheckNextMaxItem = false;
+                mNeedCheckNextMinItem = false;
+                RecycleAllItem();
+                ClearAllTmpRecycledItem();
+                UpdateContentSize();
+                if (IsVertList)
+                {
+                    SetAnchoredPositionY(mContainerTrans, 0f);
+                }
+                else
+                {
+                    SetAnchoredPositionX(mContainerTrans, 0f);
+                }
+                return;
             }
 
-            mLeftSnapUpdateExtraCount = 1;
-            mNeedCheckNextMaxItem = true;
-            mNeedCheckNextMinItem = true;
+            //mLeftSnapUpdateExtraCount = 1;
 
+            //mNeedCheckNextMaxItem = true;
+            //mNeedCheckNextMinItem = true;
 
-            //RecycleAllItem();
-            //ClearAllTmpRecycledItem();
-
-            //UpdateContentSize();
-            //UpdateAllShownItemsPos();
         }
 
 
