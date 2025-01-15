@@ -2157,11 +2157,13 @@ namespace SuperScrollView
                 LoopListViewItem2 firstItem = mItemList[0];
                 LoopListViewItem2 lastItem = mItemList[mItemList.Count - 1];
                 float viewMaxY = GetContentPanelSize();
+                //显示列表中第一个Item没有在顶部位置
                 if (firstItem.TopY > 0 || (firstItem.ItemIndex == mCurReadyMinItemIndex && firstItem.TopY != 0))
                 {
                     UpdateAllShownItemsPos();
                     return;
                 }
+                //显示列表中最后一个Item没有在底部位置
                 if ((-lastItem.BottomY) > viewMaxY || (lastItem.ItemIndex == mCurReadyMaxItemIndex && (-lastItem.BottomY) != viewMaxY))
                 {
                     UpdateAllShownItemsPos();
@@ -2711,33 +2713,44 @@ namespace SuperScrollView
             MovePanelToItemIndex(maxItemIndex, 0);
         }
 
+
         public void SetListItemCountNew(int itemCount)
         {
-            //if (itemCount == mItemTotalCount)
-            //    return;
-            //mItemTotalCount = itemCount;
-            //if (mItemTotalCount < 0)
-            //    mSupportScrollBar = false;
-            //if (mSupportScrollBar)
-            //    mItemPosMgr.SetItemMaxCount(mItemTotalCount);
-            //else
-            //    mItemPosMgr.SetItemMaxCount(0);
+            if (itemCount == mItemTotalCount)
+                return;
+            mItemTotalCount = itemCount;
+            if (mItemTotalCount < 0)
+                mSupportScrollBar = false;
+            if (mSupportScrollBar)
+                mItemPosMgr.SetItemMaxCount(mItemTotalCount);
+            else
+                mItemPosMgr.SetItemMaxCount(0);
 
-            //if (mSupportScrollBar)
-            //{
-            //    mItemPosMgr.Update(false);
-            //}
+            if (mItemTotalCount == 0)
+            {
+                mCurReadyMaxItemIndex = 0;
+                mCurReadyMinItemIndex = 0;
+                mNeedCheckNextMaxItem = false;
+                mNeedCheckNextMinItem = false;
+                RecycleAllItem();
+                ClearAllTmpRecycledItem();
+                UpdateContentSize();
+                if (IsVertList)
+                {
+                    SetAnchoredPositionY(mContainerTrans, 0f);
+                }
+                else
+                {
+                    SetAnchoredPositionX(mContainerTrans, 0f);
+                }
+                return;
+            }
 
             //mLeftSnapUpdateExtraCount = 1;
+
             //mNeedCheckNextMaxItem = true;
             //mNeedCheckNextMinItem = true;
 
-
-            //RecycleAllItem();
-            //ClearAllTmpRecycledItem();
-
-            //UpdateContentSize();
-            //UpdateAllShownItemsPos();
         }
 
 

@@ -20,7 +20,7 @@ namespace SuperScrollView
         // Use this for initialization
         void Start()
         {
-            mLoopListView.InitListView(1, OnGetItemByIndex);
+            mLoopListView.InitListView(30, OnGetItemByIndex);
 
             mSetCountButton = GameObject.Find("ButtonPanel/buttonGroup1/SetCountButton").GetComponent<Button>();
             mScrollToButton = GameObject.Find("ButtonPanel/buttonGroup2/ScrollToButton").GetComponent<Button>();
@@ -36,7 +36,7 @@ namespace SuperScrollView
 
 
 
-            mLoopListView.SetListItemCount(2,false);
+            mLoopListView.SetListItemCountNew(30);
 
             //mLoopListView.MovePanelToItemIndex(10000-1, 0);
             //mLoopListView.ForceUpdate();
@@ -82,15 +82,16 @@ namespace SuperScrollView
 
         void OnJumpBtnClicked()
         {
-            //int itemIndex = 0;
-            //if (int.TryParse(mScrollToInput.text, out itemIndex) == false)
-            //{
-            //    return;
-            //}
+            int itemIndex = 0;
+            if (int.TryParse(mScrollToInput.text, out itemIndex) == false)
+            {
+                return;
+            }
             //mLoopListView.MovePanelToItemIndex(itemIndex, 0);
-            mLoopListView.SetListItemCount(20, false);
-            //mLoopListView.MovePanelToItemIndex(0, 0);
-            mLoopListView.MovePanelToItemIndex(20 - 1, 0);
+            mLoopListView.SetListItemCountNew(itemIndex);
+            //mLoopListView.RefreshAllShownItemNew();
+
+            mLoopListView.MovePanelToItemIndex(itemIndex - 1, 0);
         }
 
         void OnAddItemBtnClicked()
@@ -114,18 +115,19 @@ namespace SuperScrollView
 
         void OnSetItemCountBtnClicked()
         {
-            //int count = 0;
-            //if (int.TryParse(mSetCountInput.text, out count) == false)
-            //{
-            //    return;
-            //}
+            int count = 0;
+            if (int.TryParse(mSetCountInput.text, out count) == false)
+            {
+                return;
+            }
             //if (count < 0 || count > DataSourceMgr.Get.TotalItemCount)
             //{
             //    return;
             //}
-            mLoopListView.SetListItemCount(8,false);
-            //mLoopListView.MovePanelToItemIndex(0, 0);
-            mLoopListView.MovePanelToItemIndex(8 - 1, 0);
+            mLoopListView.SetListItemCountNew(count);
+            //mLoopListView.RefreshAllShownItemNew();
+
+            mLoopListView.MovePanelToItemIndex(count - 1, 0);
             //mLoopListView.ForceUpdate();
         }
 

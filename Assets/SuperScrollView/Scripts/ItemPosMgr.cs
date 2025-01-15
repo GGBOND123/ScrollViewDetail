@@ -201,11 +201,22 @@ namespace SuperScrollView
             mDirtyBeginIndex = mItemCount;
         }
 
+        //原版清除Group数据，相同数据的情况下，设置数据数量
+        //public void ClearOldData()
+        //{
+        //    for (int i = mItemCount; i < ItemPosMgr.mItemMaxCountPerGroup; ++i)
+        //    {
+        //        mItemSizeArray[i] = 0;
+        //    }
+        //}
+
         public void ClearOldData()
         {
+            mDirtyBeginIndex = 0;
             for (int i = mItemCount; i < ItemPosMgr.mItemMaxCountPerGroup; ++i)
             {
-                mItemSizeArray[i] = 0;
+                mItemSizeArray[i] = mItemDefaultSize;
+                mItemStartPosArray[i] = 0;
             }
         }
     }
