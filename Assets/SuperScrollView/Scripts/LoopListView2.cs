@@ -3236,14 +3236,6 @@ namespace SuperScrollView
                 RecycleAllItem();
                 ClearAllTmpRecycledItem();
                 UpdateContentSize();
-                if (IsVertList)
-                {
-                    SetAnchoredPositionY(mContainerTrans, 0f);
-                }
-                else
-                {
-                    SetAnchoredPositionX(mContainerTrans, 0f);
-                }
                 return;
             }
 
