@@ -202,22 +202,27 @@ namespace SuperScrollView
         }
 
         //原版清除Group数据，相同数据的情况下，设置数据数量
-        //public void ClearOldData()
-        //{
-        //    for (int i = mItemCount; i < ItemPosMgr.mItemMaxCountPerGroup; ++i)
-        //    {
-        //        mItemSizeArray[i] = 0;
-        //    }
-        //}
-
         public void ClearOldData()
         {
-            mDirtyBeginIndex = 0;
             for (int i = mItemCount; i < ItemPosMgr.mItemMaxCountPerGroup; ++i)
+            {
+                mItemSizeArray[i] = 0;
+            }
+        }
+
+        public void ClearAllDirtyData()
+        {
+            for (int i = 0; i < ItemPosMgr.mItemMaxCountPerGroup; ++i)
             {
                 mItemSizeArray[i] = mItemDefaultSize;
                 mItemStartPosArray[i] = 0;
             }
+            mItemCount = 0;
+            mGroupStartPos = 0;
+            mGroupEndPos = 0;
+            mGroupSize = 0;
+            mMaxNoZeroIndex = 0;
+            mDirtyBeginIndex = 0;
         }
     }
 
@@ -441,5 +446,54 @@ namespace SuperScrollView
             }
         }
 
+        public void SetItemMaxCountAndClearDirtyData(int maxCount)
+        {
+            mDirtyBeginIndex = 0;
+            mTotalSize = 0;
+            int st = maxCount % mItemMaxCountPerGroup;
+            int lastGroupItemCount = st;
+            int needMaxGroupCount = maxCount / mItemMaxCountPerGroup;
+            if (st > 0)
+                needMaxGroupCount++;
+            else
+                lastGroupItemCount = mItemMaxCountPerGroup;
+
+            int count = mItemSizeGroupList.Count;
+            if (count > needMaxGroupCount)
+            {
+                int d = count - needMaxGroupCount;
+                mItemSizeGroupList.RemoveRange(needMaxGroupCount, d);
+            }
+            else
+            {
+                for (int i = 0; i < count; ++i)
+                    mItemSizeGroupList[i].ClearAllDirtyData();
+
+                int d = needMaxGroupCount - count;
+                for (int i = 0; i < d; ++i)
+                {
+                    ItemSizeGroup tGroup = new ItemSizeGroup(count + i, mItemDefaultSize);
+                    mItemSizeGroupList.Add(tGroup);
+                }
+            }
+
+            count = mItemSizeGroupList.Count;
+            if ((count - 1) < mMaxNotEmptyGroupIndex)
+                mMaxNotEmptyGroupIndex = count - 1;
+
+            if (mMaxNotEmptyGroupIndex < 0)
+                mMaxNotEmptyGroupIndex = 0;
+
+            if (count == 0)
+                return;
+            for (int i = 0; i < count - 1; ++i)
+                mItemSizeGroupList[i].SetItemCount(mItemMaxCountPerGroup);
+            mItemSizeGroupList[count - 1].SetItemCount(lastGroupItemCount);
+
+            for (int i = 0; i < count; ++i)
+            {
+                mTotalSize = mTotalSize + mItemSizeGroupList[i].mGroupSize;
+            }
+        }
     }
 }

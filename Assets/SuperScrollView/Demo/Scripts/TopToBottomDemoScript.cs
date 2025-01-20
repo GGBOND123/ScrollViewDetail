@@ -63,6 +63,9 @@ namespace SuperScrollView
             }
             //get a new item. Every item can use a different prefab, the parameter of the NewListViewItem is the prefab’name. 
             //And all the prefabs should be listed in ItemPrefabList in LoopListView2 Inspector Setting
+
+            Debug.LogError(index);
+
             LoopListViewItem2 item = listView.NewListViewItem("ItemPrefab1");
             ListItem2 itemScript = item.GetComponent<ListItem2>();
             if (item.IsInitHandlerCalled == false)
@@ -82,10 +85,10 @@ namespace SuperScrollView
                 return;
             }
             //mLoopListView.MovePanelToItemIndex(itemIndex, 0);
-            mLoopListView.SetListItemCountNew(itemIndex);
+            mLoopListView.SetListItemCount(itemIndex);
             //mLoopListView.RefreshAllShownItemNew();
 
-            mLoopListView.MovePanelToItemIndex(itemIndex - 1, 0);
+            //mLoopListView.MovePanelToItemIndex(itemIndex - 1, 0);
         }
 
         void OnAddItemBtnClicked()
@@ -99,17 +102,17 @@ namespace SuperScrollView
             {
                 return;
             }
-            count = mLoopListView.ItemTotalCount + count;
-            if (count < 0 || count > DataSourceMgr.Get.TotalItemCount)
-            {
-                return;
-            }
-            mLoopListView.SetListItemCount(count, false);
+            //count = mLoopListView.ItemTotalCount + count;
+            //if (count < 0 || count > DataSourceMgr.Get.TotalItemCount)
+            //{
+            //    return;
+            //}
+            mLoopListView.MovePanelToItemIndex(count, 500);
         }
 
         void OnSetItemCountBtnClicked()
         {
-            int count = 0;
+            int count = 20;
             if (int.TryParse(mSetCountInput.text, out count) == false)
             {
                 return;
@@ -117,12 +120,7 @@ namespace SuperScrollView
             //if (count < 0 || count > DataSourceMgr.Get.TotalItemCount)
             //{
             //    return;
-            //}
-            mLoopListView.SetListItemCountNew(count);
-            //mLoopListView.RefreshAllShownItemNew();
-
-            mLoopListView.MovePanelToItemIndex(count - 1, 0);
-            //mLoopListView.ForceUpdate();
+            mLoopListView.ResizeListAndMoveToIndex_CustomizeForTopToBottom(count, count - 10, 500);
         }
 
     }

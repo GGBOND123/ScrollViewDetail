@@ -3084,10 +3084,108 @@ namespace SuperScrollView
 
             mItemList.Add(newItem);
             UpdateContentSize();
-            UpdateListView(viewPortSize + 100, viewPortSize + 100, viewPortSize, viewPortSize);
+            UpdateListView(viewPortSize + 100, viewPortSize + 100, 80, 80);
             AdjustPanelPos();
             ClearAllTmpRecycledItem();
         }
+
+        public void ResizeListAndMoveToIndex_CustomizeForTopToBottom(int itemCount, int moveIndex, float offset)
+        {
+            Debug.LogError("ResizeItemListAndMovePanelToItemIndex 刷新");
+
+            if (mArrangeType != ListItemArrangeType.TopToBottom)
+            {
+                Debug.LogError("调用 ResizeItemListAndMovePanelToItemIndex 仅限于 TopToBottom 的排序方式下！");
+                return;
+            }
+
+            //SetListItemCount  的改动
+            mCurSnapData.Clear();
+            mItemTotalCount = itemCount;
+            if (mItemTotalCount < 0)
+                mSupportScrollBar = false;
+            if (mSupportScrollBar)
+                mItemPosMgr.SetItemMaxCountAndClearDirtyData(mItemTotalCount);
+
+            if (mItemTotalCount == 0)
+            {
+                mCurReadyMaxItemIndex = 0;
+                mCurReadyMinItemIndex = 0;
+                mNeedCheckNextMaxItem = false;
+                mNeedCheckNextMinItem = false;
+                RecycleAllItem();
+                ClearAllTmpRecycledItem();
+                UpdateContentSize();
+                return;
+            }
+
+            if (itemCount < moveIndex + 1)
+                return;
+
+            mCurReadyMaxItemIndex = 0;
+            mCurReadyMinItemIndex = 0;
+            mNeedCheckNextMaxItem = true;
+            mNeedCheckNextMinItem = true;
+
+
+            //MovePanelToItemIndex  的改动
+            mScrollRect.StopMovement();
+            mCurSnapData.Clear();
+            if (moveIndex < 0 || mItemTotalCount == 0)
+                return;
+
+            if (mItemTotalCount > 0 && moveIndex >= mItemTotalCount)
+                moveIndex = mItemTotalCount - 1;
+
+            if (offset < 0)
+                offset = 0;
+
+            
+            
+            //ListItemArrangeType.TopToBottom，当前content位置不变，从显示的ViewPort开始排列第一个Item。 
+            Vector3 pos = Vector3.zero;
+            float viewPortSize = ViewPortSize;
+            if (offset > viewPortSize)
+                offset = viewPortSize;
+
+            float containerPos = mContainerTrans.localPosition.y;
+            if (containerPos < 0)
+                containerPos = 0;
+
+            float finalMove = -containerPos - offset;
+
+            RecycleAllItem();
+            LoopListViewItem2 newItem = GetNewItemByIndex(moveIndex);
+            if (newItem == null)
+            {
+                ClearAllTmpRecycledItem();
+                return;
+            }
+
+            //特殊处理从底部开始排列
+            if (itemCount == moveIndex + 1)
+                finalMove = -containerPos - viewPortSize + newItem.ItemSizeWithPadding - offset;
+
+            pos.y = finalMove;
+            pos.x = newItem.StartPosOffset;
+            
+            newItem.CachedRectTransform.localPosition = pos;
+
+            if (mSupportScrollBar)
+            {
+                if (mIsVertList)
+                    SetItemSize(moveIndex, newItem.CachedRectTransform.rect.height, newItem.Padding);
+                else
+                    SetItemSize(moveIndex, newItem.CachedRectTransform.rect.width, newItem.Padding);
+            }
+
+            mItemList.Add(newItem);
+            UpdateContentSize();
+            UpdateListView(viewPortSize + 100, viewPortSize + 100, 80, 80);
+            AdjustPanelPos();
+            ClearAllTmpRecycledItem();
+        }
+
 
         //update all visible items.
         public void RefreshAllShownItem()
@@ -3239,10 +3337,10 @@ namespace SuperScrollView
                 return;
             }
 
-            //mLeftSnapUpdateExtraCount = 1;
-
-            //mNeedCheckNextMaxItem = true;
-            //mNeedCheckNextMinItem = true;
+            mCurReadyMaxItemIndex = 0;
+            mCurReadyMinItemIndex = 0;
+            mNeedCheckNextMaxItem = false;
+            mNeedCheckNextMinItem = false;
 
         }
 
